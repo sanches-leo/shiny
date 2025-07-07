@@ -86,8 +86,8 @@ ui <- navbarPage(
              fluidPage(
                  titlePanel("Summarize and Enrich Modules"),
                  fluidRow(
-                     column(6, imageOutput("enriched_graph_plot")),
-                     column(6, imageOutput("stacked_barplot_plot"))
+                     column(6, imageOutput("enriched_graph_plot", height = "100%")),
+                     column(6, imageOutput("stacked_barplot_plot", height = "100%"))
                  )
              )
     ),
