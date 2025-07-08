@@ -97,7 +97,7 @@ ui <- navbarPage(
                 )),
                 column(6, tags$a(
                     href = "stackedplot.png", target = "_blank",
-                    imageOutput("stacked_barplot_plot", height = "600px", width = "1000px")
+                    imageOutput("stacked_barplot_plot", height = "360px", width = "600px")
                 ))
             )
         )
