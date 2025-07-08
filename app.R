@@ -93,11 +93,11 @@ ui <- navbarPage(
             fluidRow(
                 column(6, tags$a(
                     href = "enrichedgraph.png", target = "_blank",
-                    imageOutput("enriched_graph_plot", height = "600px", width = "600px")
+                    tags$img(src = "enrichedgraph.png", style = "max-width: 100%; height: auto;")
                 )),
                 column(6, tags$a(
                     href = "stackedplot.png", target = "_blank",
-                    imageOutput("stacked_barplot_plot", height = "360px", width = "600px")
+                    tags$img(src = "stackedplot.png", style = "max-width: 100%; height: auto;")
                 ))
             )
         )
@@ -323,8 +323,8 @@ server <- function(input, output, session) {
                     src = stacked_path,
                     contentType = "image/png",
                     alt = "Stacked Barplot",
-                    width = 800,
-                    height = 1000
+                    width = 1000,
+                    height = 600
                 )
             },
             deleteFile = FALSE
