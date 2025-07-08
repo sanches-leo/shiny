@@ -311,7 +311,7 @@ server <- function(input, output, session) {
                     contentType = "image/png",
                     alt = "Enriched Graph",
                     width = 800,
-                    height = 600
+                    height = 800
                 )
             },
             deleteFile = FALSE
@@ -324,7 +324,7 @@ server <- function(input, output, session) {
                     contentType = "image/png",
                     alt = "Stacked Barplot",
                     width = 800,
-                    height = 600
+                    height = 1000
                 )
             },
             deleteFile = FALSE
