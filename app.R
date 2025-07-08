@@ -134,8 +134,8 @@ ui <- navbarPage(
                 ),
                 mainPanel(
                     fluidRow(
-                        column(6, imageOutput("net_plot")),
-                        column(6, imageOutput("enr_plot"))
+                        column(6, uiOutput("lnc_net_plot_output")),
+                        column(6, uiOutput("lnc_enr_plot_output"))
                     )
                 )
             )
@@ -361,28 +361,33 @@ server <- function(input, output, session) {
     # 7.0 lnc-centric analysis
     observeEvent(input$run_lnc_analysis_btn, {
         req(values$lacenObject, input$lncSymbol_input)
+        # Save high-res images to the www directory
+        net_path <- file.path("www", "net_plot.png")
+        enr_path <- file.path("www", "enr_plot.png")
+
         lncRNAEnrich(
             lncName = input$lncSymbol_input,
             lacenObject = values$lacenObject,
             nGenesNet = input$mGenesNet_input,
             nTerm = input$nTerm_input,
             sources = input$sources_input,
-            netPath = "./net.png",
-            enr_path = "./enr.png"
+            netPath = net_path,
+            enrPath = enr_path
         )
 
-        output$net_plot <- renderImage(
-            {
-                list(src = "net.png", contentType = "image/png", alt = "Network Plot")
-            },
-            deleteFile = TRUE
-        )
-        output$enr_plot <- renderImage(
-            {
-                list(src = "enr.png", contentType = "image/png", alt = "Enrichment Plot")
-            },
-            deleteFile = TRUE
-        )
+        output$lnc_net_plot_output <- renderUI({
+            tags$a(
+                href = "net_plot.png", target = "_blank",
+                tags$img(src = "net_plot.png", style = "max-width: 100%; height: auto;")
+            )
+        })
+
+        output$lnc_enr_plot_output <- renderUI({
+            tags$a(
+                href = "enr_plot.png", target = "_blank",
+                tags$img(src = "enr_plot.png", style = "max-width: 100%; height: auto;")
+            )
+        })
     })
 }
 

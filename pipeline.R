@@ -105,6 +105,6 @@ lncRNAEnrich(lncName = "LINC01055",
              nTerm = 20,
              sources = "GO:BP",
              netPath = "./net.png",
-             enr_path = "./enr.png")
+             enrPath = "./enr.png")
 
 # The output are 2 files: "net.png" and "enr.png", exhibit then and allow to click it to open in a new tab with zoom
