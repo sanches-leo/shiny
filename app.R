@@ -74,7 +74,7 @@ ui <- fluidPage(
                         actionButton("accept_height_btn", "Accept Height and Proceed")
                     ),
                     mainPanel(
-                        imageOutput("cluster_tree_plot")
+                        uiOutput("cluster_tree_plot")
                     )
                 )
             )
@@ -89,7 +89,7 @@ ui <- fluidPage(
                         actionButton("run_soft_threshold_btn", "Select Power and Proceed")
                     ),
                     mainPanel(
-                        imageOutput("soft_threshold_plot")
+                        uiOutput("soft_threshold_plot")
                     )
                 )
             )
@@ -121,7 +121,7 @@ ui <- fluidPage(
                         actionButton("run_heatmap_btn", "Generate Heatmap")
                     ),
                     mainPanel(
-                        imageOutput("heatmap_plot")
+                        uiOutput("heatmap_plot")
                     )
                 )
             )
@@ -260,12 +260,12 @@ server <- function(input, output, session) {
                             plot = FALSE,
                             filename = file_name)
 
-        output$cluster_tree_plot <- renderImage(
-            {
-                list(src = file_name, contentType = "image/png", alt = "Cluster Tree")
-            },
-            deleteFile = FALSE
-        )
+        output$cluster_tree_plot <- renderUI({
+            tags$a(
+                href = "clusterTree.png", target = "_blank",
+                tags$img(src = "clusterTree.png", style = "max-width: 100%; height: auto;")
+            )
+        })
         session$sendCustomMessage(type = 'hide_overlay', message = list())
     })
 
@@ -280,12 +280,12 @@ server <- function(input, output, session) {
                             plot = FALSE,
                             filename = file_name)
 
-        output$cluster_tree_plot <- renderImage(
-            {
-                list(src = file_name, contentType = "image/png", alt = "Cluster Tree")
-            },
-            deleteFile = FALSE
-        )
+        output$cluster_tree_plot <- renderUI({
+            tags$a(
+                href = "clusterTreeThreshold.png", target = "_blank",
+                tags$img(src = "clusterTreeThreshold.png", style = "max-width: 100%; height: auto;")
+            )
+        })
         session$sendCustomMessage(type = 'hide_overlay', message = list())
     })
 
@@ -304,12 +304,12 @@ server <- function(input, output, session) {
             plot = FALSE)
 
            
-        output$soft_threshold_plot <- renderImage(
-            {
-                list(src = file_name, contentType = "image/png", alt = "Soft Threshold Plot")
-            },
-            deleteFile = FALSE
-        )
+        output$soft_threshold_plot <- renderUI({
+            tags$a(
+                href = "indicePower.png", target = "_blank",
+                tags$img(src = "indicePower.png", style = "max-width: 100%; height: auto;")
+            )
+        })
         session$sendCustomMessage(type = 'hide_overlay', message = list())
     })
 
@@ -381,6 +381,7 @@ server <- function(input, output, session) {
         submodule_val <- if (input$submodule_input == 0) FALSE else input$submodule_input
         file_name <- file.path("www", paste("heatmap_", input$module_input, ".png", sep = ""))
         out_tsv <- file.path("www", paste("heatmap_", input$module_input, ".tsv", sep = ""))
+        image_file_name <- paste("heatmap_", input$module_input, ".png", sep = "")
 
         heatmapTopConnectivity(
             lacenObject = values$lacenObject,
@@ -389,12 +390,12 @@ server <- function(input, output, session) {
             filename = file_name,
             outTSV = out_tsv
         )
-        output$heatmap_plot <- renderImage(
-            {
-                list(src = file_name, contentType = "image/png", alt = "Module Heatmap")
-            },
-            deleteFile = FALSE
-        )
+        output$heatmap_plot <- renderUI({
+            tags$a(
+                href = image_file_name, target = "_blank",
+                tags$img(src = image_file_name, style = "max-width: 100%; height: auto;")
+            )
+        })
         session$sendCustomMessage(type = 'hide_overlay', message = list())
     })
 
