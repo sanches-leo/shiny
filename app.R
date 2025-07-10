@@ -239,12 +239,18 @@ server <- function(input, output, session) {
         updateNavbarPage(session, "main_nav", selected = "clustering")
 
         # Initial clustering plot
-        selectOutlierSample(values$lacenObject, height = FALSE, plot = TRUE, filename = "clusterTree.png")
+        file_name <- file.path("www", "clusterTree.png")
+
+        selectOutlierSample(values$lacenObject,
+                            height = FALSE,
+                            plot = FALSE,
+                            filename = file_name)
+
         output$cluster_tree_plot <- renderImage(
             {
-                list(src = "clusterTree.png", contentType = "image/png", alt = "Cluster Tree")
+                list(src = file_name, contentType = "image/png", alt = "Cluster Tree")
             },
-            deleteFile = TRUE
+            deleteFile = FALSE
         )
     })
 
@@ -252,12 +258,17 @@ server <- function(input, output, session) {
     observeEvent(input$rerun_clustering_btn, {
         req(values$lacenObject)
         height_val <- if (input$height_input == 0) FALSE else input$height_input
-        selectOutlierSample(values$lacenObject, height = height_val, plot = TRUE, filename = "clusterTree.png")
+        file_name <- file.path("www", "clusterTreeThreshold.png")
+        selectOutlierSample(values$lacenObject,
+                            height = height_val,
+                            plot = FALSE,
+                            filename = file_name)
+
         output$cluster_tree_plot <- renderImage(
             {
-                list(src = "clusterTree.png", contentType = "image/png", alt = "Cluster Tree")
+                list(src = file_name, contentType = "image/png", alt = "Cluster Tree")
             },
-            deleteFile = TRUE
+            deleteFile = FALSE
         )
     })
 
@@ -266,14 +277,20 @@ server <- function(input, output, session) {
         height_val <- if (input$height_input == 0) FALSE else input$height_input
         values$lacenObject <- cutOutlierSample(values$lacenObject, height = height_val)
         updateNavbarPage(session, "main_nav", selected = "soft_threshold")
+        file_name <- file.path("www", "indicePower.png")
 
         # Initial soft threshold plot
-        plotSoftThreshold(values$lacenObject, filename = "indicePower.png", maxBlockSize = 10000, plot = FALSE)
+        plotSoftThreshold(values$lacenObject,
+            filename = file_name,
+            maxBlockSize = 20000,
+            plot = FALSE)
+
+           
         output$soft_threshold_plot <- renderImage(
             {
-                list(src = "indicePower.png", contentType = "image/png", alt = "Soft Threshold Plot")
+                list(src = file_name, contentType = "image/png", alt = "Soft Threshold Plot")
             },
-            deleteFile = TRUE
+            deleteFile = FALSE
         )
     })
 
@@ -291,11 +308,16 @@ server <- function(input, output, session) {
         # Save high-res images to the www directory
         enriched_path <- file.path("www", "enrichedgraph.png")
         stacked_path <- file.path("www", "stackedplot.png")
+        mod_path <- file.path("www")
+        log_path <- file.path("log", "log.txt")
 
         values$lacenObject <- summarizeAndEnrichModules(
             lacenObject = values$lacenObject,
-            maxBlockSize = 40000,
-            filename = enriched_path
+            maxBlockSize = 20000,
+            filename = enriched_path,
+            modPath = mod_path,
+            log = TRUE,
+            log_path = log_path
         )
 
         stackedBarplot(
@@ -335,17 +357,21 @@ server <- function(input, output, session) {
     observeEvent(input$run_heatmap_btn, {
         req(values$lacenObject)
         submodule_val <- if (input$submodule_input == 0) FALSE else input$submodule_input
+        file_name <- file.path("www", paste("heatmap_", input$module_input, ".png", sep = ""))
+        out_tsv <- file.path("www", paste("heatmap_", input$module_input, ".tsv", sep = ""))
+
         heatmapTopConnectivity(
             lacenObject = values$lacenObject,
             module = input$module_input,
             submodule = submodule_val,
-            filename = "mod.png"
+            filename = file_name,
+            outTSV = out_tsv
         )
         output$heatmap_plot <- renderImage(
             {
-                list(src = "mod.png", contentType = "image/png", alt = "Module Heatmap")
+                list(src = file_name, contentType = "image/png", alt = "Module Heatmap")
             },
-            deleteFile = TRUE
+            deleteFile = FALSE
         )
     })
 
@@ -362,8 +388,15 @@ server <- function(input, output, session) {
     observeEvent(input$run_lnc_analysis_btn, {
         req(values$lacenObject, input$lncSymbol_input)
         # Save high-res images to the www directory
-        net_path <- file.path("www", "net_plot.png")
-        enr_path <- file.path("www", "enr_plot.png")
+        net_path <- file.path("www", paste0(input$lncSymbol_input, "_netPlot.png"))
+        enr_path <- file.path("www", paste0(input$lncSymbol_input, "_enrPlot.png"))
+        connec_path <- file.path("www", paste0(input$lncSymbol_input, "_connectivities.csv"))
+        enr_csv_path <- file.path("www", paste0(input$lncSymbol_input, "_enrichment.csv"))
+        image_filename_net <- paste0(input$lncSymbol_input, "_netPlot.png")
+        image_filename_enr <- paste0(input$lncSymbol_input, "_enrPlot.png")
+
+
+
 
         lncRNAEnrich(
             lncName = input$lncSymbol_input,
@@ -372,20 +405,22 @@ server <- function(input, output, session) {
             nTerm = input$nTerm_input,
             sources = input$sources_input,
             netPath = net_path,
-            enrPath = enr_path
+            enrPath = enr_path,
+            connecPath = connec_path,
+            enrCsvPath = enr_csv_path
         )
 
         output$lnc_net_plot_output <- renderUI({
             tags$a(
-                href = "net_plot.png", target = "_blank",
-                tags$img(src = "net_plot.png", style = "max-width: 100%; height: auto;")
+                href = image_filename_net, target = "_blank",
+                tags$img(src = image_filename_net, style = "max-width: 100%; height: auto;")
             )
         })
 
         output$lnc_enr_plot_output <- renderUI({
             tags$a(
-                href = "enr_plot.png", target = "_blank",
-                tags$img(src = "enr_plot.png", style = "max-width: 100%; height: auto;")
+                href = image_filename_enr, target = "_blank",
+                tags$img(src = image_filename_enr, style = "max-width: 100%; height: auto;")
             )
         })
     })
