@@ -148,6 +148,14 @@ ui <- fluidPage(
                     )
                 )
             )
+        ),
+        tabPanel("Download",
+            value = "download",
+            fluidPage(
+                titlePanel("Download Data"),
+                p("Click the button below to download all the generated data as a zip file."),
+                downloadButton("download_data_btn", "Download All Data")
+            )
         )
     )
 )
@@ -450,6 +458,39 @@ server <- function(input, output, session) {
         })
         session$sendCustomMessage(type = 'hide_overlay', message = list())
     })
+
+    # 8.0 Download Data
+    output$download_data_btn <- downloadHandler(
+        filename = function() {
+            "lacen_pipeline_results.zip"
+        },
+        content = function(file) {
+            # Create a temporary directory
+            temp_zip_dir <- tempdir()
+            # Create the desired output directory structure within the temp directory
+            final_output_folder <- file.path(temp_zip_dir, "lacen_output")
+            dir.create(final_output_folder, recursive = TRUE)
+
+            # List all files in www, excluding script.js and styles.css
+            all_www_files <- list.files("www", full.names = TRUE)
+            files_to_copy <- all_www_files[!basename(all_www_files) %in% c("script.js", "styles.css")]
+
+            # Copy each desired file to the new structure
+            for (f in files_to_copy) {
+                file.copy(f, file.path(final_output_folder, basename(f)))
+            }
+
+            # Zip the contents of the temporary directory.
+            # The 'root' argument here is crucial: it makes the paths in the zip relative to temp_zip_dir.
+            # So, 'temp_zip_dir/lacen_output/file.png' becomes 'lacen_output/file.png' in the zip.
+            # Change working directory to the temporary directory to ensure correct zipping structure
+            old_wd <- setwd(temp_zip_dir)
+            on.exit(setwd(old_wd)) # Ensure we revert the working directory
+
+            # Zip the 'lacen_output' folder. The 'files' argument should be the folder name relative to the current WD.
+            utils::zip(zipfile = file, files = "lacen_output")
+        }
+    )
 }
 
 # Run the application
