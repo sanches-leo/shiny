@@ -13,93 +13,102 @@ ui <- fluidPage(
         tags$script(src = "script.js")
     ),
     div(id = "loading-overlay", div(class = "loader"), p("Processing..."), style = "display: none;"),
-    navbarPage(
-        "LACEN Pipeline",
-        id = "main_nav",
-        tabPanel("Greetings",
-            value = "greetings",
-            fluidPage(
-                titlePanel("Welcome to the LACEN Shiny App"),
-                p("This application provides a graphical interface for the LACEN pipeline."),
-                actionButton("start_btn", "Start")
-            )
-        ),
-        tabPanel("Load Data",
-            value = "load_data",
-            fluidPage(
-                titlePanel("Load Data"),
-                sidebarLayout(
-                    sidebarPanel(
-                        fileInput("annotationData_file", "Upload Annotation Data (TSV)", accept = ".tsv"),
-                        fileInput("expressionDGEData_file", "Upload Expression DGE Data (TSV)", accept = ".tsv"),
-                        fileInput("ncAnnotation_file", "Upload ncAnnotation Data (TSV)", accept = ".tsv"),
-                        fileInput("rawExpressionData_file", "Upload Raw Expression Data (TSV)", accept = ".tsv"),
-                        fileInput("traitsData_file", "Upload Traits Data (TSV)", accept = ".tsv"),
-                        hr(),
-                        actionButton("use_demo_data_btn", "Use Demo Data"),
-                        hr(),
-                        actionButton("check_data_btn", "Check Data Format", disabled = TRUE)
-                    ),
-                    mainPanel(
-                        verbatimTextOutput("check_data_output")
+        div(id = "login_screen",
+        fluidPage(
+            titlePanel("User Login"),
+            textInput("user_id", "Enter User ID:"),
+            actionButton("login_btn", "Login"),
+            textOutput("login_message")
+        )
+    ),
+    div(id = "main_app", style = "display: none;",
+        navbarPage(
+            "LACEN Pipeline",
+            id = "main_nav",
+            tabPanel("Greetings",
+                value = "greetings",
+                fluidPage(
+                    titlePanel("Welcome to the LACEN Shiny App"),
+                    p("This application provides a graphical interface for the LACEN pipeline."),
+                    actionButton("start_btn", "Start")
+                )
+            ),
+            tabPanel("Load Data",
+                value = "load_data",
+                fluidPage(
+                    titlePanel("Load Data"),
+                    sidebarLayout(
+                        sidebarPanel(
+                            fileInput("annotationData_file", "Upload Annotation Data (TSV)", accept = ".tsv"),
+                            fileInput("expressionDGEData_file", "Upload Expression DGE Data (TSV)", accept = ".tsv"),
+                            fileInput("ncAnnotation_file", "Upload ncAnnotation Data (TSV)", accept = ".tsv"),
+                            fileInput("rawExpressionData_file", "Upload Raw Expression Data (TSV)", accept = ".tsv"),
+                            fileInput("traitsData_file", "Upload Traits Data (TSV)", accept = ".tsv"),
+                            hr(),
+                            actionButton("use_demo_data_btn", "Use Demo Data"),
+                            hr(),
+                            actionButton("check_data_btn", "Check Data Format", disabled = TRUE)
+                        ),
+                        mainPanel(
+                            verbatimTextOutput("check_data_output")
+                        )
                     )
                 )
-            )
-        ),
-        tabPanel("Filter and Transform",
-            value = "filter_transform",
-            fluidPage(
-                titlePanel("Filter and Transform"),
-                sidebarLayout(
-                    sidebarPanel(
-                        numericInput("pThreshold", "P-value Threshold", 0.05, min = 0, max = 1, step = 0.01),
-                        numericInput("fcThreshold", "Fold Change Threshold", 1.5, min = 0, step = 0.1),
-                        actionButton("run_filter_transform_btn", "Run Filter and Transform")
-                    ),
-                    mainPanel(
-                        verbatimTextOutput("filter_transform_output")
+            ),
+            tabPanel("Filter and Transform",
+                value = "filter_transform",
+                fluidPage(
+                    titlePanel("Filter and Transform"),
+                    sidebarLayout(
+                        sidebarPanel(
+                            numericInput("pThreshold", "P-value Threshold", 0.05, min = 0, max = 1, step = 0.01),
+                            numericInput("fcThreshold", "Fold Change Threshold", 1.5, min = 0, step = 0.1),
+                            actionButton("run_filter_transform_btn", "Run Filter and Transform")
+                        ),
+                        mainPanel(
+                            verbatimTextOutput("filter_transform_output")
+                        )
                     )
                 )
-            )
-        ),
-        tabPanel("Clustering",
-            value = "clustering",
-            fluidPage(
-                titlePanel("Clustering"),
-                sidebarLayout(
-                    sidebarPanel(
-                        numericInput("height_input", "Select Height", 0),
-                        actionButton("rerun_clustering_btn", "Re-run Clustering"),
-                        hr(),
-                        actionButton("accept_height_btn", "Accept Height and Proceed")
-                    ),
-                    mainPanel(
-                        uiOutput("cluster_tree_plot")
+            ),
+            tabPanel("Clustering",
+                value = "clustering",
+                fluidPage(
+                    titlePanel("Clustering"),
+                    sidebarLayout(
+                        sidebarPanel(
+                            numericInput("height_input", "Select Height", 0),
+                            actionButton("rerun_clustering_btn", "Re-run Clustering"),
+                            hr(),
+                            actionButton("accept_height_btn", "Accept Height and Proceed")
+                        ),
+                        mainPanel(
+                            uiOutput("cluster_tree_plot")
+                        )
                     )
                 )
-            )
-        ),
-        tabPanel("Soft Threshold",
-            value = "soft_threshold",
-            fluidPage(
-                titlePanel("Soft Threshold"),
-                sidebarLayout(
-                    sidebarPanel(
-                        numericInput("indicePower_input", "Select Indice Power", 9, min = 1, max = 20),
-                        actionButton("run_soft_threshold_btn", "Select Power and Proceed")
-                    ),
-                    mainPanel(
-                        uiOutput("soft_threshold_plot")
+            ),
+            tabPanel("Soft Threshold",
+                value = "soft_threshold",
+                fluidPage(
+                    titlePanel("Soft Threshold"),
+                    sidebarLayout(
+                        sidebarPanel(
+                            numericInput("indicePower_input", "Select Indice Power", 9, min = 1, max = 20),
+                            actionButton("run_soft_threshold_btn", "Select Power and Proceed")
+                        ),
+                        mainPanel(
+                            uiOutput("soft_threshold_plot")
+                        )
                     )
                 )
-            )
-        ),
-        tabPanel("Summarize and Enrich",
-            value = "summarize_enrich",
-            fluidPage(
-                titlePanel("Summarize and Enrich Modules"),
-                fluidRow(
-                    column(6, tags$a(
+            ),
+            tabPanel("Summarize and Enrich",
+                value = "summarize_enrich",
+                fluidPage(
+                    titlePanel("Summarize and Enrich Modules"),
+                    fluidRow(
+                        column(6, tags$a(
                         href = "enrichedgraph.png", target = "_blank",
                         tags$img(src = "enrichedgraph.png", style = "max-width: 100%; height: auto;")
                     )),
@@ -107,54 +116,55 @@ ui <- fluidPage(
                         href = "stackedplot.png", target = "_blank",
                         tags$img(src = "stackedplot.png", style = "max-width: 100%; height: auto;")
                     ))
-                )
-            )
-        ),
-        tabPanel("Heatmap",
-            value = "heatmap",
-            fluidPage(
-                titlePanel("Heatmap"),
-                sidebarLayout(
-                    sidebarPanel(
-                        numericInput("module_input", "Select Module", 1, min = 1),
-                        numericInput("submodule_input", "Select Submodule (0 for FALSE)", 0, min = 0),
-                        actionButton("run_heatmap_btn", "Generate Heatmap")
-                    ),
-                    mainPanel(
-                        uiOutput("heatmap_plot")
                     )
                 )
-            )
-        ),
-        tabPanel("LNC-centric Analysis",
-            value = "lnc_centric",
-            fluidPage(
-                titlePanel("LNC-centric Analysis"),
-                sidebarLayout(
-                    sidebarPanel(
-                        selectizeInput("lncSymbol_input", "LNC Symbol", choices = NULL),
-                        numericInput("mGenesNet_input", "mGenesNet", 80),
-                        numericInput("nTerm_input", "nTerm", 20),
-                        selectInput("sources_input", "Sources",
-                            choices = c("GO", "GO:BP", "GO:MF", "GO:CC", "KEGG", "REAC")
+            ),
+            tabPanel("Heatmap",
+                value = "heatmap",
+                fluidPage(
+                    titlePanel("Heatmap"),
+                    sidebarLayout(
+                        sidebarPanel(
+                            numericInput("module_input", "Select Module", 1, min = 1),
+                            numericInput("submodule_input", "Select Submodule (0 for FALSE)", 0, min = 0),
+                            actionButton("run_heatmap_btn", "Generate Heatmap")
                         ),
-                        actionButton("run_lnc_analysis_btn", "Run Analysis")
-                    ),
-                    mainPanel(
-                        fluidRow(
-                            column(6, uiOutput("lnc_net_plot_output")),
-                            column(6, uiOutput("lnc_enr_plot_output"))
+                        mainPanel(
+                            uiOutput("heatmap_plot")
                         )
                     )
                 )
-            )
-        ),
-        tabPanel("Download",
-            value = "download",
-            fluidPage(
-                titlePanel("Download Data"),
-                p("Click the button below to download all the generated data as a zip file."),
-                downloadButton("download_data_btn", "Download All Data")
+            ),
+            tabPanel("LNC-centric Analysis",
+                value = "lnc_centric",
+                fluidPage(
+                    titlePanel("LNC-centric Analysis"),
+                    sidebarLayout(
+                        sidebarPanel(
+                            selectizeInput("lncSymbol_input", "LNC Symbol", choices = NULL),
+                            numericInput("mGenesNet_input", "mGenesNet", 80),
+                            numericInput("nTerm_input", "nTerm", 20),
+                            selectInput("sources_input", "Sources",
+                                choices = c("GO", "GO:BP", "GO:MF", "GO:CC", "KEGG", "REAC")
+                            ),
+                            actionButton("run_lnc_analysis_btn", "Run Analysis")
+                        ),
+                        mainPanel(
+                            fluidRow(
+                                column(6, uiOutput("lnc_net_plot_output")),
+                                column(6, uiOutput("lnc_enr_plot_output"))
+                            )
+                        )
+                    )
+                )
+            ),
+            tabPanel("Download",
+                value = "download",
+                fluidPage(
+                    titlePanel("Download Data"),
+                    p("Click the button below to download all the generated data as a zip file."),
+                    downloadButton("download_data_btn", "Download All Data")
+                )
             )
         )
     )
@@ -166,8 +176,28 @@ server <- function(input, output, session) {
     values <- reactiveValues(
         lacenObject = NULL,
         data_checked = FALSE,
-        lncList = NULL
+        lncList = NULL,
+        user_id = NULL
     )
+
+    # Login screen logic
+    observeEvent(input$login_btn, {
+        user_id <- trimws(input$user_id)
+        if (user_id == "") {
+            output$login_message <- renderText({
+                "User ID cannot be empty."
+            })
+        } else {
+            user_dir <- file.path("users", user_id)
+            if (!dir.exists(user_dir)) {
+                dir.create(user_dir, recursive = TRUE)
+            }
+            addResourcePath("users_data", "users") # Map 'users' directory to '/users_data' URL
+            values$user_id <- user_id
+            shinyjs::hide("login_screen")
+            shinyjs::show("main_app")
+        }
+    })
 
     # 1.0 Greetings
     observeEvent(input$start_btn, {
@@ -261,7 +291,7 @@ server <- function(input, output, session) {
         updateNavbarPage(session, "main_nav", selected = "clustering")
 
         # Initial clustering plot
-        file_name <- file.path("www", "clusterTree.png")
+        file_name <- file.path("users", values$user_id, "clusterTree.png")
 
         selectOutlierSample(values$lacenObject,
                             height = FALSE,
@@ -270,8 +300,8 @@ server <- function(input, output, session) {
 
         output$cluster_tree_plot <- renderUI({
             tags$a(
-                href = "clusterTree.png", target = "_blank",
-                tags$img(src = "clusterTree.png", style = "max-width: 100%; height: auto;")
+                href = file.path("users_data", values$user_id, "clusterTree.png"), target = "_blank",
+                tags$img(src = file.path("users_data", values$user_id, "clusterTree.png"), style = "max-width: 100%; height: auto;")
             )
         })
         session$sendCustomMessage(type = 'hide_overlay', message = list())
@@ -282,7 +312,7 @@ server <- function(input, output, session) {
         session$sendCustomMessage(type = 'show_overlay', message = list())
         req(values$lacenObject)
         height_val <- if (input$height_input == 0) FALSE else input$height_input
-        file_name <- file.path("www", "clusterTreeThreshold.png")
+        file_name <- file.path("users", values$user_id, "clusterTreeThreshold.png")
         selectOutlierSample(values$lacenObject,
                             height = height_val,
                             plot = FALSE,
@@ -290,8 +320,8 @@ server <- function(input, output, session) {
 
         output$cluster_tree_plot <- renderUI({
             tags$a(
-                href = "clusterTreeThreshold.png", target = "_blank",
-                tags$img(src = "clusterTreeThreshold.png", style = "max-width: 100%; height: auto;")
+                href = file.path("users_data", values$user_id, "clusterTreeThreshold.png"), target = "_blank",
+                tags$img(src = file.path("users_data", values$user_id, "clusterTreeThreshold.png"), style = "max-width: 100%; height: auto;")
             )
         })
         session$sendCustomMessage(type = 'hide_overlay', message = list())
@@ -303,7 +333,7 @@ server <- function(input, output, session) {
         height_val <- if (input$height_input == 0) FALSE else input$height_input
         values$lacenObject <- cutOutlierSample(values$lacenObject, height = height_val)
         updateNavbarPage(session, "main_nav", selected = "soft_threshold")
-        file_name <- file.path("www", "indicePower.png")
+        file_name <- file.path("users", values$user_id, "indicePower.png")
 
         # Initial soft threshold plot
         plotSoftThreshold(values$lacenObject,
@@ -314,8 +344,8 @@ server <- function(input, output, session) {
            
         output$soft_threshold_plot <- renderUI({
             tags$a(
-                href = "indicePower.png", target = "_blank",
-                tags$img(src = "indicePower.png", style = "max-width: 100%; height: auto;")
+                href = file.path("users_data", values$user_id, "indicePower.png"), target = "_blank",
+                tags$img(src = file.path("users_data", values$user_id, "indicePower.png"), style = "max-width: 100%; height: auto;")
             )
         })
         session$sendCustomMessage(type = 'hide_overlay', message = list())
@@ -334,10 +364,10 @@ server <- function(input, output, session) {
         updateNavbarPage(session, "main_nav", selected = "summarize_enrich")
 
         # Save high-res images to the www directory
-        enriched_path <- file.path("www", "enrichedgraph.png")
-        stacked_path <- file.path("www", "stackedplot.png")
-        mod_path <- file.path("www")
-        log_path <- file.path("log", "log.txt")
+        enriched_path <- file.path("users", values$user_id, "enrichedgraph.png")
+        stacked_path <- file.path("users", values$user_id, "stackedplot.png")
+        mod_path <- file.path("users", values$user_id)
+        log_path <- file.path("users", values$user_id, "log.txt")
 
         values$lacenObject <- summarizeAndEnrichModules(
             lacenObject = values$lacenObject,
@@ -387,8 +417,8 @@ server <- function(input, output, session) {
         session$sendCustomMessage(type = 'show_overlay', message = list())
         req(values$lacenObject)
         submodule_val <- if (input$submodule_input == 0) FALSE else input$submodule_input
-        file_name <- file.path("www", paste("heatmap_", input$module_input, ".png", sep = ""))
-        out_tsv <- file.path("www", paste("heatmap_", input$module_input, ".tsv", sep = ""))
+        file_name <- file.path("users", values$user_id, paste("heatmap_", input$module_input, ".png", sep = ""))
+        out_tsv <- file.path("users", values$user_id, paste("heatmap_", input$module_input, ".tsv", sep = ""))
         image_file_name <- paste("heatmap_", input$module_input, ".png", sep = "")
 
         heatmapTopConnectivity(
@@ -400,8 +430,8 @@ server <- function(input, output, session) {
         )
         output$heatmap_plot <- renderUI({
             tags$a(
-                href = image_file_name, target = "_blank",
-                tags$img(src = image_file_name, style = "max-width: 100%; height: auto;")
+                href = file.path("users_data", values$user_id, image_file_name), target = "_blank",
+                tags$img(src = file.path("users_data", values$user_id, image_file_name), style = "max-width: 100%; height: auto;")
             )
         })
         session$sendCustomMessage(type = 'hide_overlay', message = list())
@@ -421,10 +451,10 @@ server <- function(input, output, session) {
         session$sendCustomMessage(type = 'show_overlay', message = list())
         req(values$lacenObject, input$lncSymbol_input)
         # Save high-res images to the www directory
-        net_path <- file.path("www", paste0(input$lncSymbol_input, "_netPlot.png"))
-        enr_path <- file.path("www", paste0(input$lncSymbol_input, "_enrPlot.png"))
-        connec_path <- file.path("www", paste0(input$lncSymbol_input, "_connectivities.csv"))
-        enr_csv_path <- file.path("www", paste0(input$lncSymbol_input, "_enrichment.csv"))
+        net_path <- file.path("users", values$user_id, paste0(input$lncSymbol_input, "_netPlot.png"))
+        enr_path <- file.path("users", values$user_id, paste0(input$lncSymbol_input, "_enrPlot.png"))
+        connec_path <- file.path("users", values$user_id, paste0(input$lncSymbol_input, "_connectivities.csv"))
+        enr_csv_path <- file.path("users", values$user_id, paste0(input$lncSymbol_input, "_enrichment.csv"))
         image_filename_net <- paste0(input$lncSymbol_input, "_netPlot.png")
         image_filename_enr <- paste0(input$lncSymbol_input, "_enrPlot.png")
 
@@ -445,15 +475,15 @@ server <- function(input, output, session) {
 
         output$lnc_net_plot_output <- renderUI({
             tags$a(
-                href = image_filename_net, target = "_blank",
-                tags$img(src = image_filename_net, style = "max-width: 100%; height: auto;")
+                href = file.path("users_data", values$user_id, image_filename_net), target = "_blank",
+                tags$img(src = file.path("users_data", values$user_id, image_filename_net), style = "max-width: 100%; height: auto;")
             )
         })
 
         output$lnc_enr_plot_output <- renderUI({
             tags$a(
-                href = image_filename_enr, target = "_blank",
-                tags$img(src = image_filename_enr, style = "max-width: 100%; height: auto;")
+                href = file.path("users_data", values$user_id, image_filename_enr), target = "_blank",
+                tags$img(src = file.path("users_data", values$user_id, image_filename_enr), style = "max-width: 100%; height: auto;")
             )
         })
         session$sendCustomMessage(type = 'hide_overlay', message = list())
@@ -471,9 +501,9 @@ server <- function(input, output, session) {
             final_output_folder <- file.path(temp_zip_dir, "lacen_output")
             dir.create(final_output_folder, recursive = TRUE)
 
-            # List all files in www, excluding script.js and styles.css
-            all_www_files <- list.files("www", full.names = TRUE)
-            files_to_copy <- all_www_files[!basename(all_www_files) %in% c("script.js", "styles.css")]
+            # List all files in the user's directory
+            all_user_files <- list.files(file.path("users", values$user_id), full.names = TRUE)
+            files_to_copy <- all_user_files
 
             # Copy each desired file to the new structure
             for (f in files_to_copy) {
