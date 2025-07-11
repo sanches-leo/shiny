@@ -17,6 +17,7 @@ ui <- fluidPage(
         fluidPage(
             titlePanel("User Login"),
             textInput("user_id", "Enter User ID:"),
+            passwordInput("password", "Enter Password:"),
             actionButton("login_btn", "Login"),
             textOutput("login_message")
         )
@@ -244,9 +245,19 @@ server <- function(input, output, session) {
     observeEvent(input$login_btn, {
         session$sendCustomMessage(type = 'show_overlay', message = list()) # Show overlay
         user_id <- trimws(input$user_id)
-        if (user_id == "") {
+        password <- input$password
+
+        # Read password from .pass file
+        correct_password <- trimws(readLines(".pass", n = 1))
+
+        if (user_id == "" || password == "") {
             output$login_message <- renderText({
-                "User ID cannot be empty."
+                "User ID and password cannot be empty."
+            })
+            session$sendCustomMessage(type = 'hide_overlay', message = list()) # Hide overlay on error
+        } else if (password != correct_password) {
+            output$login_message <- renderText({
+                "Incorrect password."
             })
             session$sendCustomMessage(type = 'hide_overlay', message = list()) # Hide overlay on error
         } else {

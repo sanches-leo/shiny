@@ -1,0 +1,18 @@
+curl
+libcurl4-openssl-dev
+libssl-dev
+libxml2-dev
+libfreetype6-dev
+libpng-dev
+libtiff5-dev
+libjpeg-dev
+libudunits2-dev
+libgit2-dev
+
+https://github.com/TheDuckman/lacen-app/blob/master/lacen-base/Dockerfile
+
+RUN add-apt-repository 'deb https://cloud.r-project.org/bin/linux/ubuntu focal-cran40/'
+
+if (!require("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("sanches-leo/lacen")
