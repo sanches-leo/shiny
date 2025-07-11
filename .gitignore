@@ -2,3 +2,5 @@ Rplots.pdf
 *.png
 *.csv
 *.txt
+*.tsv
+*.rds

@@ -108,15 +108,9 @@ ui <- fluidPage(
                 fluidPage(
                     titlePanel("Summarize and Enrich Modules"),
                     fluidRow(
-                        column(6, tags$a(
-                        href = "enrichedgraph.png", target = "_blank",
-                        tags$img(src = "enrichedgraph.png", style = "max-width: 100%; height: auto;")
-                    )),
-                    column(6, tags$a(
-                        href = "stackedplot.png", target = "_blank",
-                        tags$img(src = "stackedplot.png", style = "max-width: 100%; height: auto;")
-                    ))
-                    )
+                    column(6, uiOutput("enriched_graph_output")),
+                    column(6, uiOutput("stacked_barplot_output"))
+                )
                 )
             ),
             tabPanel("Heatmap",
@@ -182,11 +176,13 @@ server <- function(input, output, session) {
 
     # Login screen logic
     observeEvent(input$login_btn, {
+        session$sendCustomMessage(type = 'show_overlay', message = list()) # Show overlay
         user_id <- trimws(input$user_id)
         if (user_id == "") {
             output$login_message <- renderText({
                 "User ID cannot be empty."
             })
+            session$sendCustomMessage(type = 'hide_overlay', message = list()) # Hide overlay on error
         } else {
             user_dir <- file.path("users", user_id)
             if (!dir.exists(user_dir)) {
@@ -194,8 +190,19 @@ server <- function(input, output, session) {
             }
             addResourcePath("users_data", "users") # Map 'users' directory to '/users_data' URL
             values$user_id <- user_id
-            shinyjs::hide("login_screen")
-            shinyjs::show("main_app")
+
+            # Check if lacenObject.rds exists for this user
+            lacen_object_path <- file.path("users", values$user_id, "lacenObject.rds")
+            if (file.exists(lacen_object_path)) {
+                values$lacenObject <- readRDS(lacen_object_path)
+                shinyjs::hide("login_screen")
+                shinyjs::show("main_app")
+                updateNavbarPage(session, "main_nav", selected = "heatmap") # Skip to Heatmap tab
+            } else {
+                shinyjs::hide("login_screen")
+                shinyjs::show("main_app")
+            }
+            session$sendCustomMessage(type = 'hide_overlay', message = list()) # Hide overlay after successful login
         }
     })
 
@@ -384,31 +391,22 @@ server <- function(input, output, session) {
             plot = FALSE
         )
 
-        output$enriched_graph_plot <- renderImage(
-            {
-                list(
-                    src = enriched_path,
-                    contentType = "image/png",
-                    alt = "Enriched Graph",
-                    width = 800,
-                    height = 800
-                )
-            },
-            deleteFile = FALSE
-        )
+        # Save lacenObject to RDS
+        saveRDS(values$lacenObject, file.path("users", values$user_id, "lacenObject.rds"))
 
-        output$stacked_barplot_plot <- renderImage(
-            {
-                list(
-                    src = stacked_path,
-                    contentType = "image/png",
-                    alt = "Stacked Barplot",
-                    width = 1000,
-                    height = 600
-                )
-            },
-            deleteFile = FALSE
-        )
+        output$enriched_graph_output <- renderUI({
+            tags$a(
+                href = file.path("users_data", values$user_id, "enrichedgraph.png"), target = "_blank",
+                tags$img(src = file.path("users_data", values$user_id, "enrichedgraph.png"), style = "max-width: 100%; height: auto;")
+            )
+        })
+
+        output$stacked_barplot_output <- renderUI({
+            tags$a(
+                href = file.path("users_data", values$user_id, "stackedplot.png"), target = "_blank",
+                tags$img(src = file.path("users_data", values$user_id, "stackedplot.png"), style = "max-width: 100%; height: auto;")
+            )
+        })
         session$sendCustomMessage(type = 'hide_overlay', message = list())
     })
 
