@@ -175,6 +175,71 @@ server <- function(input, output, session) {
         user_id = NULL
     )
 
+    # Reactive observer to regenerate plots when lacenObject is loaded from a saved session
+    observe({
+        req(values$lacenObject)
+        # Check if we are in a restored session by looking at the selected tab
+        if (input$main_nav == "heatmap") {
+
+            # Regenerate Cluster Tree Plot
+            cluster_tree_path_threshold <- file.path("users", values$user_id, "clusterTreeThreshold.png")
+            cluster_tree_path_initial <- file.path("users", values$user_id, "clusterTree.png")
+            
+            # Decide which cluster tree image to show
+            final_cluster_path <- if (file.exists(cluster_tree_path_threshold)) {
+                file.path("users_data", values$user_id, "clusterTreeThreshold.png")
+            } else if (file.exists(cluster_tree_path_initial)) {
+                file.path("users_data", values$user_id, "clusterTree.png")
+            } else {
+                NULL
+            }
+
+            if (!is.null(final_cluster_path)) {
+                output$cluster_tree_plot <- renderUI({
+                    tags$a(
+                        href = final_cluster_path, target = "_blank",
+                        tags$img(src = final_cluster_path, style = "max-width: 100%; height: auto;")
+                    )
+                })
+            }
+
+            # Regenerate Soft Threshold Plot
+            soft_threshold_path_file <- file.path("users", values$user_id, "indicePower.png")
+            if (file.exists(soft_threshold_path_file)) {
+                soft_threshold_path_url <- file.path("users_data", values$user_id, "indicePower.png")
+                output$soft_threshold_plot <- renderUI({
+                    tags$a(
+                        href = soft_threshold_path_url, target = "_blank",
+                        tags$img(src = soft_threshold_path_url, style = "max-width: 100%; height: auto;")
+                    )
+                })
+            }
+
+            # Regenerate Summarize and Enrich Plots
+            enriched_graph_path_file <- file.path("users", values$user_id, "enrichedgraph.png")
+            if (file.exists(enriched_graph_path_file)) {
+                enriched_graph_path_url <- file.path("users_data", values$user_id, "enrichedgraph.png")
+                output$enriched_graph_output <- renderUI({
+                    tags$a(
+                        href = enriched_graph_path_url, target = "_blank",
+                        tags$img(src = enriched_graph_path_url, style = "max-width: 100%; height: auto;")
+                    )
+                })
+            }
+
+            stacked_barplot_path_file <- file.path("users", values$user_id, "stackedplot.png")
+            if (file.exists(stacked_barplot_path_file)) {
+                stacked_barplot_path_url <- file.path("users_data", values$user_id, "stackedplot.png")
+                output$stacked_barplot_output <- renderUI({
+                    tags$a(
+                        href = stacked_barplot_path_url, target = "_blank",
+                        tags$img(src = stacked_barplot_path_url, style = "max-width: 100%; height: auto;")
+                    )
+                })
+            }
+        }
+    })
+
     # Login screen logic
     observeEvent(input$login_btn, {
         session$sendCustomMessage(type = 'show_overlay', message = list()) # Show overlay
