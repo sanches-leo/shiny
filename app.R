@@ -136,8 +136,9 @@ ui <- fluidPage(
                     sidebarLayout(
                         sidebarPanel(
                             selectizeInput("lncSymbol_input", "LNC Symbol", choices = NULL),
-                            numericInput("mGenesNet_input", "mGenesNet", 80),
-                            numericInput("nTerm_input", "nTerm", 20),
+                            numericInput("nGenesNet_input", "nGenesNet", 20),
+                            numericInput("nTerm_input", "nTerm", 10),
+                            numericInput("nGenes_input", "nGenes", 100),
                             selectInput("sources_input", "Sources",
                                 choices = c("GO", "GO:BP", "GO:MF", "GO:CC", "KEGG", "REAC")
                             ),
@@ -494,33 +495,40 @@ server <- function(input, output, session) {
         image_filename_enr <- paste0(input$lncSymbol_input, "_enrPlot.png")
 
 
-
-
-        lncRNAEnrich(
-            lncName = input$lncSymbol_input,
-            lacenObject = values$lacenObject,
-            nGenesNet = input$mGenesNet_input,
-            nTerm = input$nTerm_input,
-            sources = input$sources_input,
-            netPath = net_path,
-            enrPath = enr_path,
-            connecPath = connec_path,
-            enrCsvPath = enr_csv_path
+        tryCatch({
+            lncRNAEnrich(
+                lncName = input$lncSymbol_input,
+                lacenObject = values$lacenObject,
+                nGenesNet = input$nGenesNet_input,
+                nTerm = input$nTerm_input,
+                nGenes = input$nGenes_input,
+                sources = input$sources_input,
+                netPath = net_path,
+                enrPath = enr_path,
+                connecPath = connec_path,
+                enrCsvPath = enr_csv_path
         )
 
-        output$lnc_net_plot_output <- renderUI({
-            tags$a(
-                href = file.path("users_data", values$user_id, image_filename_net), target = "_blank",
-                tags$img(src = file.path("users_data", values$user_id, image_filename_net), style = "max-width: 100%; height: auto;")
+            output$lnc_net_plot_output <- renderUI({
+                tags$a(
+                    href = file.path("users_data", values$user_id, image_filename_net), target = "_blank",
+                    tags$img(src = file.path("users_data", values$user_id, image_filename_net), style = "max-width: 100%; height: auto;")
+                )
+            })
+
+            output$lnc_enr_plot_output <- renderUI({
+                tags$a(
+                    href = file.path("users_data", values$user_id, image_filename_enr), target = "_blank",
+                    tags$img(src = file.path("users_data", values$user_id, image_filename_enr), style = "max-width: 100%; height: auto;")
+                )
+            })
+        }, error = function(e) {
+            showNotification(
+                paste("No enrichment results. Please increase nGenes number or try another lncRNA."),
+                type = "error", duration = NULL
             )
         })
 
-        output$lnc_enr_plot_output <- renderUI({
-            tags$a(
-                href = file.path("users_data", values$user_id, image_filename_enr), target = "_blank",
-                tags$img(src = file.path("users_data", values$user_id, image_filename_enr), style = "max-width: 100%; height: auto;")
-            )
-        })
         session$sendCustomMessage(type = 'hide_overlay', message = list())
     })
 
@@ -538,6 +546,7 @@ server <- function(input, output, session) {
 
             # List all files in the user's directory
             all_user_files <- list.files(file.path("users", values$user_id), full.names = TRUE)
+            all_user_files <- all_user_files[!grepl("*.rds", all_user_files)]
             files_to_copy <- all_user_files
 
             # Copy each desired file to the new structure
