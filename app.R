@@ -419,19 +419,56 @@ server <- function(input, output, session) {
         out_tsv <- file.path("users", values$user_id, paste("heatmap_", input$module_input, ".tsv", sep = ""))
         image_file_name <- paste("heatmap_", input$module_input, ".png", sep = "")
 
-        heatmapTopConnectivity(
-            lacenObject = values$lacenObject,
-            module = input$module_input,
-            submodule = submodule_val,
-            filename = file_name,
-            outTSV = out_tsv
-        )
-        output$heatmap_plot <- renderUI({
-            tags$a(
-                href = file.path("users_data", values$user_id, image_file_name), target = "_blank",
-                tags$img(src = file.path("users_data", values$user_id, image_file_name), style = "max-width: 100%; height: auto;")
+        test_module <- function(module, submodule, summdf){
+            suppressWarnings(
+                sel_modules <- (names(summdf) == "module" | !is.na(as.numeric(names(summdf))))
             )
-        })
+            valid_modules <- summdf[, sel_modules]
+            valid_modules <- valid_modules %>% 
+                group_by(module) %>%
+                summarize(across(everything(), any), .groups = 'drop')
+            if(module %in% valid_modules$module){
+                if(isFALSE(submodule)){
+                return(TRUE)
+                } else {
+                submodules <- unlist(valid_modules[valid_modules$module == module, -1])
+                submodules <- as.numeric(names(submodules)[submodules == TRUE])
+                return((module %in% valid_modules$module) & (submodule %in% submodules))
+                }
+            }
+
+            return(FALSE)
+        }
+
+        if(test_module(input$module_input, submodule_val, values$lacenObject$summdf)){
+            tryCatch({
+                heatmapTopConnectivity(
+                    lacenObject = values$lacenObject,
+                    module = input$module_input,
+                    submodule = submodule_val,
+                    filename = file_name,
+                    outTSV = out_tsv
+                )
+
+                output$heatmap_plot <- renderUI({
+                    tags$a(
+                        href = file.path("users_data", values$user_id, image_file_name), target = "_blank",
+                        tags$img(
+                            src = file.path("users_data", values$user_id, image_file_name),
+                            style = "max-width: 100%; height: auto;"
+                        )
+                    )
+                })
+            }, error = function(e) {
+                showNotification(
+                    paste("Heatmap generation failed: low connectivity module"),
+                    type = "error", duration = NULL
+                )
+            })
+        } else {
+            showNotification("Invalid module/submodule. See the last plot for reference.", type = "error")
+        }
+
         session$sendCustomMessage(type = 'hide_overlay', message = list())
     })
 
