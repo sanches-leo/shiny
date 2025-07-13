@@ -4,6 +4,7 @@ library(lacen)
 library(dplyr)
 
 options(shiny.launch.browser = TRUE)
+options(shiny.maxRequestSize = 100 * 1024^2) 
 
 # UI Definition
 ui <- fluidPage(
@@ -40,11 +41,19 @@ ui <- fluidPage(
                     titlePanel("Load Data"),
                     sidebarLayout(
                         sidebarPanel(
-                            fileInput("annotationData_file", "Upload Annotation Data (TSV)", accept = ".tsv"),
-                            fileInput("expressionDGEData_file", "Upload Expression DGE Data (TSV)", accept = ".tsv"),
-                            fileInput("ncAnnotation_file", "Upload ncAnnotation Data (TSV)", accept = ".tsv"),
-                            fileInput("rawExpressionData_file", "Upload Raw Expression Data (TSV)", accept = ".tsv"),
-                            fileInput("traitsData_file", "Upload Traits Data (TSV)", accept = ".tsv"),
+                            fileInput("rawExpressionData_file", "Upload Raw Expression Data (CSV)", accept = ".csv"),
+                            fileInput("expressionDGEData_file", "Upload Expression DGE Data (CSV)", accept = ".csv"),
+                            fileInput("traitsData_file", "Upload Traits Data (CSV)", accept = ".csv"),
+                            fileInput("annotationData_file",
+                                      "Upload Annotation Data (GTF or CSV)",
+                                      accept = c(".csv",
+                                                 ".gtf",
+                                                 ".gtf.gz")),
+                            fileInput("ncAnnotation_file",
+                                      "Upload ncAnnotation Data (GTF or CSV)",
+                                      accept = c(".csv",
+                                                 ".gtf",
+                                                 ".gtf.gz")),
                             hr(),
                             actionButton("use_demo_data_btn", "Use Demo Data"),
                             hr(),
@@ -185,7 +194,6 @@ server <- function(input, output, session) {
             # Regenerate Cluster Tree Plot
             cluster_tree_path_threshold <- file.path("users", values$user_id, "clusterTreeThreshold.png")
             cluster_tree_path_initial <- file.path("users", values$user_id, "clusterTree.png")
-            
             # Decide which cluster tree image to show
             final_cluster_path <- if (file.exists(cluster_tree_path_threshold)) {
                 file.path("users_data", values$user_id, "clusterTreeThreshold.png")
@@ -319,43 +327,102 @@ server <- function(input, output, session) {
         session$sendCustomMessage(type = 'hide_overlay', message = list())
     })
 
+    # 1. Create a reactiveVal to store the output text. This is the correct way.
+    check_output_text <- reactiveVal("Data has not been checked yet.")
+
+    # 2. Your renderPrint should be defined ONCE, outside the observer.
+    #    It simply displays the content of the reactiveVal.
+    output$check_data_output <- renderPrint({
+        cat(check_output_text())
+    })
+
+    # 3. The observeEvent handles the logic when the button is clicked.
     observeEvent(input$check_data_btn, {
         session$sendCustomMessage(type = 'show_overlay', message = list())
-        if (!is.null(values$lacenObject)) { # Demo data path
-            check_result <- checkData(values$lacenObject)
-        } else { # Uploaded data path
+        
+        # Use a temporary variable to hold the object we are going to check
+        lacen_object_to_check <- NULL
+
+        # --- Logic to load or retrieve the data ---
+        if (!is.null(values$lacenObject)) { 
+            # Path 1: Demo data already exists
+            lacen_object_to_check <- values$lacenObject
+        } else { 
+            # Path 2: Load data from file uploads
             req(
-                input$annotationData_file, input$expressionDGEData_file, input$ncAnnotation_file,
-                input$rawExpressionData_file, input$traitsData_file
+                input$annotationData_file,
+                input$expressionDGEData_file,
+                input$ncAnnotation_file,
+                input$rawExpressionData_file,
+                input$traitsData_file
             )
 
-            annotationData <- read.delim(input$annotationData_file$datapath, sep = "	")
-            expressionDGEData <- read.delim(input$expressionDGEData_file$datapath, sep = "	")
-            ncAnnotation <- read.delim(input$ncAnnotation_file$datapath, sep = "	")
-            rawExpressionData <- read.delim(input$rawExpressionData_file$datapath, sep = "	")
-            traitsData <- read.delim(input$traitsData_file$datapath, sep = "	")
+            # Use a tryCatch to handle potential errors during file reading
+            tryCatch({
+                expressionDGEData <- read.csv(input$expressionDGEData_file$datapath)
+                rawExpressionData <- read.csv(input$rawExpressionData_file$datapath)
+                traitsData <- read.csv(input$traitsData_file$datapath)
 
-            values$lacenObject <- initLacen(
-                annotationData = annotationData,
-                datCounts = rawExpressionData,
-                datExpression = expressionDGEData,
-                datTraits = traitsData,
-                ncAnnotation = ncAnnotation
-            )
-            check_result <- checkData(values$lacenObject)
+                # --- Correctly read annotationData ---
+                ann_filename <- input$annotationData_file$name
+                ann_ext <- tolower(sub(".*\\.", "", ann_filename))
+                if (ann_ext == "csv") {
+                    annotationData <- read.csv(input$annotationData_file$datapath)
+                } else {
+                    annotationData <- loadGTF(input$annotationData_file$datapath)
+                }
+
+                # --- Correctly read ncAnnotation (FIXED BUG) ---
+                ncann_filename <- input$ncAnnotation_file$name
+                ncann_ext <- tolower(sub(".*\\.", "", ncann_filename))
+                if (ncann_ext == "csv") {
+                    ncAnnotation <- read.csv(input$ncAnnotation_file$datapath)
+                } else {
+                    ncAnnotation <- loadGTF(input$ncAnnotation_file$datapath)
+                }
+
+                # Initialize the object and assign it to our temporary variable
+                lacen_object_to_check <- initLacen(
+                    annotationData = annotationData,
+                    datCounts = rawExpressionData,
+                    datExpression = expressionDGEData,
+                    datTraits = traitsData,
+                    ncAnnotation = ncAnnotation
+                )
+                # Also store it in reactive values for future use
+                values$lacenObject <- lacen_object_to_check
+            }, error = function(e) {
+                # If any file reading fails, show an error and stop
+                check_output_text(paste("Error reading files:", e$message))
+                session$sendCustomMessage(type = 'hide_overlay', message = list())
+                return() # Stop execution
+            })
         }
 
-        if (isTRUE(check_result)) {
-            values$data_checked <- TRUE
-            output$check_data_output <- renderPrint({
-                "Data check passed! Proceeding to the next step."
+        # --- Unified Check Logic (runs for both demo and uploaded data) ---
+        warnings_captured <- c()
+        if (!is.null(lacen_object_to_check)) {
+            check_result <- FALSE # Default to failure
+            # Capture the printed output AND the return value of the function
+            check_result <- withCallingHandlers({
+                checkData(values$lacenObject)
+            }, warning = function(w) {
+                warnings_captured <<- c(warnings_captured, w$message)
+                invokeRestart("muffleWarning")
             })
-            updateNavbarPage(session, "main_nav", selected = "filter_transform")
-        } else {
-            output$check_data_output <- renderPrint({
-                check_result
-            })
+
+            # Now, check the result
+            if (isTRUE(check_result)) {
+                values$data_checked <- TRUE
+                check_output_text("Data check passed! Proceeding to the next step.")
+                updateNavbarPage(session, "main_nav", selected = "filter_transform")
+            } else {
+                # If the check fails, display the captured error/warning messages
+                final_warning_text <- paste(warnings_captured, collapse = "\n")
+                check_output_text(final_warning_text)
+            }
         }
+        
         session$sendCustomMessage(type = 'hide_overlay', message = list())
     })
 
