@@ -10,7 +10,7 @@ RUN R -e "BiocManager::install('sanches-leo/lacen', ask = FALSE)"
 # Copy application files
 COPY app.R /srv/shiny-server/
 COPY www /srv/shiny-server/www
-COPY users /srv/shiny-server/users
+# COPY users /srv/shiny-server/users
 COPY .pass /srv/shiny-server/
 
 # Change ownership of app files
