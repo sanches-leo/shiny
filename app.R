@@ -71,8 +71,17 @@ ui <- fluidPage(
                     titlePanel("Filter and Transform"),
                     sidebarLayout(
                         sidebarPanel(
-                            numericInput("pThreshold", "P-value Threshold", 0.05, min = 0, max = 1, step = 0.01),
-                            numericInput("fcThreshold", "Fold Change Threshold", 1.5, min = 0, step = 0.1),
+                            selectInput("filterMethod", "Filter Method",
+                                        choices = c("DEG", "var"), selected = "DEG"),
+                            conditionalPanel(
+                                condition = "input.filterMethod == 'DEG'",
+                                numericInput("pThreshold", "P-value Threshold", 0.05, min = 0, max = 1, step = 0.01),
+                                numericInput("fcThreshold", "Fold Change Threshold", 1.5, min = 0, step = 0.1)
+                            ),
+                            conditionalPanel(
+                                condition = "input.filterMethod == 'var'",
+                                numericInput("topVarGenes", "Top Variable Genes", 5000, min = 1)
+                            ),
                             actionButton("run_filter_transform_btn", "Run Filter and Transform")
                         ),
                         mainPanel(
@@ -251,44 +260,38 @@ server <- function(input, output, session) {
 
     # Login screen logic
     observeEvent(input$login_btn, {
-        session$sendCustomMessage(type = 'show_overlay', message = list()) # Show overlay
-        user_id <- trimws(input$user_id)
-        password <- input$password
+        session$sendCustomMessage(type = 'show_overlay', message = list())
+        tryCatch({
+            user_id <- trimws(input$user_id)
+            password <- input$password
+            correct_password <- trimws(readLines(".pass", n = 1))
 
-        # Read password from .pass file
-        correct_password <- trimws(readLines(".pass", n = 1))
-
-        if (user_id == "" || password == "") {
-            output$login_message <- renderText({
-                "User ID and password cannot be empty."
-            })
-            session$sendCustomMessage(type = 'hide_overlay', message = list()) # Hide overlay on error
-        } else if (password != correct_password) {
-            output$login_message <- renderText({
-                "Incorrect password."
-            })
-            session$sendCustomMessage(type = 'hide_overlay', message = list()) # Hide overlay on error
-        } else {
-            user_dir <- file.path("users", user_id)
-            if (!dir.exists(user_dir)) {
-                dir.create(user_dir, recursive = TRUE)
-            }
-            addResourcePath("users_data", "users") # Map 'users' directory to '/users_data' URL
-            values$user_id <- user_id
-
-            # Check if lacenObject.rds exists for this user
-            lacen_object_path <- file.path("users", values$user_id, "lacenObject.rds")
-            if (file.exists(lacen_object_path)) {
-                values$lacenObject <- readRDS(lacen_object_path)
-                shinyjs::hide("login_screen")
-                shinyjs::show("main_app")
-                updateNavbarPage(session, "main_nav", selected = "heatmap") # Skip to Heatmap tab
+            if (user_id == "" || password == "") {
+                output$login_message <- renderText({"User ID and password cannot be empty."})
+            } else if (password != correct_password) {
+                output$login_message <- renderText({"Incorrect password."})
             } else {
-                shinyjs::hide("login_screen")
-                shinyjs::show("main_app")
+                user_dir <- file.path("users", user_id)
+                if (!dir.exists(user_dir)) dir.create(user_dir, recursive = TRUE)
+                addResourcePath("users_data", "users")
+                values$user_id <- user_id
+
+                lacen_object_path <- file.path("users", values$user_id, "lacenObject.rds")
+                if (file.exists(lacen_object_path)) {
+                    values$lacenObject <- readRDS(lacen_object_path)
+                    shinyjs::hide("login_screen")
+                    shinyjs::show("main_app")
+                    updateNavbarPage(session, "main_nav", selected = "heatmap")
+                } else {
+                    shinyjs::hide("login_screen")
+                    shinyjs::show("main_app")
+                }
             }
-            session$sendCustomMessage(type = 'hide_overlay', message = list()) # Hide overlay after successful login
-        }
+        }, error = function(e) {
+            output$login_message <- renderText({ paste("An error occurred:", e$message) })
+        }, finally = {
+            session$sendCustomMessage(type = 'hide_overlay', message = list())
+        })
     })
 
     # 1.0 Greetings
@@ -298,324 +301,223 @@ server <- function(input, output, session) {
 
     # 2.0 Loading Data
     observe({
-        # Enable check data button only if all files are uploaded
-        if (!is.null(input$annotationData_file) && !is.null(input$expressionDGEData_file) &&
-            !is.null(input$ncAnnotation_file) && !is.null(input$rawExpressionData_file) &&
-            !is.null(input$traitsData_file)) {
-            updateActionButton(session, "check_data_btn", disabled = FALSE)
-        }
+        all_files_present <- !is.null(input$annotationData_file) && 
+                             !is.null(input$expressionDGEData_file) &&
+                             !is.null(input$ncAnnotation_file) && 
+                             !is.null(input$rawExpressionData_file) &&
+                             !is.null(input$traitsData_file)
+        updateActionButton(session, "check_data_btn", disabled = !all_files_present)
     })
 
     observeEvent(input$use_demo_data_btn, {
         session$sendCustomMessage(type = 'show_overlay', message = list())
-        # Load demo data
-        data("annotation_data", "expression_DGE", "nc_annotation", "raw_expression", "traits")
-
-        # Initialize lacenObject
-        values$lacenObject <- initLacen(
-            annotationData = annotation_data,
-            datCounts = raw_expression,
-            datExpression = expression_DGE,
-            datTraits = traits,
-            ncAnnotation = nc_annotation
-        )
-
-        output$check_data_output <- renderPrint({
-            "Demo data loaded. Click 'Check Data Format'."
+        tryCatch({
+            data("annotation_data", "expression_DGE", "nc_annotation", "raw_expression", "traits")
+            values$lacenObject <- initLacen(
+                annotationData = annotation_data,
+                datCounts = raw_expression,
+                datExpression = expression_DGE,
+                datTraits = traits,
+                ncAnnotation = nc_annotation
+            )
+            output$check_data_output <- renderPrint({"Demo data loaded. Click 'Check Data Format'."})
+            updateActionButton(session, "check_data_btn", disabled = FALSE)
+        }, error = function(e) {
+            showNotification(paste("Error loading demo data:", e$message), type = "error", duration = NULL)
+        }, finally = {
+            session$sendCustomMessage(type = 'hide_overlay', message = list())
         })
-        updateActionButton(session, "check_data_btn", disabled = FALSE)
-        session$sendCustomMessage(type = 'hide_overlay', message = list())
     })
 
-    # 1. Create a reactiveVal to store the output text. This is the correct way.
     check_output_text <- reactiveVal("Data has not been checked yet.")
+    output$check_data_output <- renderPrint({ cat(check_output_text()) })
 
-    # 2. Your renderPrint should be defined ONCE, outside the observer.
-    #    It simply displays the content of the reactiveVal.
-    output$check_data_output <- renderPrint({
-        cat(check_output_text())
-    })
-
-    # 3. The observeEvent handles the logic when the button is clicked.
     observeEvent(input$check_data_btn, {
         session$sendCustomMessage(type = 'show_overlay', message = list())
-        
-        # Use a temporary variable to hold the object we are going to check
-        lacen_object_to_check <- NULL
-
-        # --- Logic to load or retrieve the data ---
-        if (!is.null(values$lacenObject)) { 
-            # Path 1: Demo data already exists
-            lacen_object_to_check <- values$lacenObject
-        } else { 
-            # Path 2: Load data from file uploads
-            req(
-                input$annotationData_file,
-                input$expressionDGEData_file,
-                input$ncAnnotation_file,
-                input$rawExpressionData_file,
-                input$traitsData_file
-            )
-
-            # Use a tryCatch to handle potential errors during file reading
-            tryCatch({
+        tryCatch({
+            lacen_object_to_check <- NULL
+            if (!is.null(values$lacenObject)) {
+                lacen_object_to_check <- values$lacenObject
+            } else {
+                req(input$annotationData_file, input$expressionDGEData_file, input$ncAnnotation_file, input$rawExpressionData_file, input$traitsData_file)
                 expressionDGEData <- read.csv(input$expressionDGEData_file$datapath)
-                rawExpressionData <- read.csv(input$rawExpressionData_file$datapath,
-                                              row.names = 1,
-                                              check.names = FALSE)
+                rawExpressionData <- read.csv(input$rawExpressionData_file$datapath, row.names = 1, check.names = FALSE)
                 traitsData <- read.csv(input$traitsData_file$datapath)
-
-                # --- Correctly read annotationData ---
-                ann_filename <- input$annotationData_file$name
-                ann_ext <- tolower(sub(".*\\.", "", ann_filename))
-                if (ann_ext == "csv") {
-                    annotationData <- read.csv(input$annotationData_file$datapath)
-                } else {
-                    annotationData <- loadGTF(input$annotationData_file$datapath)
-                }
-
-                # --- Correctly read ncAnnotation (FIXED BUG) ---
-                ncann_filename <- input$ncAnnotation_file$name
-                ncann_ext <- tolower(sub(".*\\.", "", ncann_filename))
-                if (ncann_ext == "csv") {
-                    ncAnnotation <- read.csv(input$ncAnnotation_file$datapath)
-                } else {
-                    ncAnnotation <- loadGTF(input$ncAnnotation_file$datapath)
-                }
-
-                # Initialize the object and assign it to our temporary variable
-                lacen_object_to_check <- initLacen(
-                    annotationData = annotationData,
-                    datCounts = rawExpressionData,
-                    datExpression = expressionDGEData,
-                    datTraits = traitsData,
+                ann_ext <- tolower(sub(".*\\.", "", input$annotationData_file$name))
+                annotationData <- if (ann_ext == "csv") read.csv(input$annotationData_file$datapath) else loadGTF(input$annotationData_file$datapath)
+                ncann_ext <- tolower(sub(".*\\.", "", input$ncAnnotation_file$name))
+                ncAnnotation <- if (ncann_ext == "csv") read.csv(input$ncAnnotation_file$datapath) else loadGTF(input$ncAnnotation_file$datapath)
+                
+                values$lacenObject <- lacen_object_to_check <- initLacen(
+                    annotationData = annotationData, datCounts = rawExpressionData,
+                    datExpression = expressionDGEData, datTraits = traitsData,
                     ncAnnotation = ncAnnotation
                 )
-                # Also store it in reactive values for future use
-                values$lacenObject <- lacen_object_to_check
-            }, error = function(e) {
-                # If any file reading fails, show an error and stop
-                check_output_text(paste("Error reading files:", e$message))
-                session$sendCustomMessage(type = 'hide_overlay', message = list())
-                return() # Stop execution
-            })
-        }
+            }
 
-        # --- Unified Check Logic (runs for both demo and uploaded data) ---
-        warnings_captured <- c()
-        if (!is.null(lacen_object_to_check)) {
-            check_result <- FALSE # Default to failure
-            # Capture the printed output AND the return value of the function
-            check_result <- withCallingHandlers({
-                checkData(values$lacenObject)
-            }, warning = function(w) {
-                warnings_captured <<- c(warnings_captured, w$message)
-                invokeRestart("muffleWarning")
-            })
+            warnings_captured <- c()
+            check_result <- withCallingHandlers(
+                checkData(lacen_object_to_check),
+                warning = function(w) {
+                    warnings_captured <<- c(warnings_captured, w$message)
+                    invokeRestart("muffleWarning")
+                }
+            )
 
-            # Now, check the result
             if (isTRUE(check_result)) {
                 values$data_checked <- TRUE
                 check_output_text("Data check passed! Proceeding to the next step.")
                 updateNavbarPage(session, "main_nav", selected = "filter_transform")
             } else {
-                # If the check fails, display the captured error/warning messages
-                final_warning_text <- paste(warnings_captured, collapse = "\n")
-                check_output_text(final_warning_text)
+                check_output_text(paste(warnings_captured, collapse = "\n"))
             }
-        }
-        
-        session$sendCustomMessage(type = 'hide_overlay', message = list())
+        }, error = function(e) {
+            check_output_text(paste("An error occurred during data check:", e$message))
+        }, finally = {
+            session$sendCustomMessage(type = 'hide_overlay', message = list())
+        })
     })
 
     # 3.0 Filter and Transform
     observeEvent(input$run_filter_transform_btn, {
         session$sendCustomMessage(type = 'show_overlay', message = list())
-        req(values$lacenObject)
-        values$lacenObject <- filterTransform(
-            lacenObject = values$lacenObject,
-            pThreshold = input$pThreshold,
-            fcThreshold = input$fcThreshold,
-            filterMethod = "DEG"
-        )
-        output$filter_transform_output <- renderPrint({
-            "Filter and transform complete. Proceeding to clustering."
+        tryCatch({
+            req(values$lacenObject)
+            if (input$filterMethod == "DEG") {
+                values$lacenObject <- filterTransform(values$lacenObject, pThreshold = input$pThreshold, fcThreshold = input$fcThreshold, filterMethod = "DEG")
+            } else {
+                values$lacenObject <- filterTransform(values$lacenObject, topVarGenes = input$topVarGenes, filterMethod = "var")
+            }
+            output$filter_transform_output <- renderPrint({"Filter and transform complete. Proceeding to clustering."})
+            updateNavbarPage(session, "main_nav", selected = "clustering")
+            
+            file_name <- file.path("users", values$user_id, "clusterTree.png")
+            selectOutlierSample(values$lacenObject, height = FALSE, plot = FALSE, filename = file_name)
+            output$cluster_tree_plot <- renderUI({
+                tags$a(href = file.path("users_data", values$user_id, "clusterTree.png"), target = "_blank",
+                       tags$img(src = file.path("users_data", values$user_id, "clusterTree.png"), style = "max-width: 100%; height: auto;"))
+            })
+        }, error = function(e) {
+            showNotification(paste("Error during Filter/Transform:", e$message), type = "error", duration = NULL)
+        }, finally = {
+            session$sendCustomMessage(type = 'hide_overlay', message = list())
         })
-        updateNavbarPage(session, "main_nav", selected = "clustering")
-
-        # Initial clustering plot
-        file_name <- file.path("users", values$user_id, "clusterTree.png")
-
-        selectOutlierSample(values$lacenObject,
-                            height = FALSE,
-                            plot = FALSE,
-                            filename = file_name)
-
-        output$cluster_tree_plot <- renderUI({
-            tags$a(
-                href = file.path("users_data", values$user_id, "clusterTree.png"), target = "_blank",
-                tags$img(src = file.path("users_data", values$user_id, "clusterTree.png"), style = "max-width: 100%; height: auto;")
-            )
-        })
-        session$sendCustomMessage(type = 'hide_overlay', message = list())
     })
 
     # 4.0 Clustering
     observeEvent(input$rerun_clustering_btn, {
         session$sendCustomMessage(type = 'show_overlay', message = list())
-        req(values$lacenObject)
-        height_val <- if (input$height_input == 0) FALSE else input$height_input
-        file_name <- file.path("users", values$user_id, "clusterTreeThreshold.png")
-        selectOutlierSample(values$lacenObject,
-                            height = height_val,
-                            plot = FALSE,
-                            filename = file_name)
-
-        output$cluster_tree_plot <- renderUI({
-            tags$a(
-                href = file.path("users_data", values$user_id, "clusterTreeThreshold.png"), target = "_blank",
-                tags$img(src = file.path("users_data", values$user_id, "clusterTreeThreshold.png"), style = "max-width: 100%; height: auto;")
-            )
+        tryCatch({
+            req(values$lacenObject)
+            height_val <- if (input$height_input == 0) FALSE else input$height_input
+            file_name <- file.path("users", values$user_id, "clusterTreeThreshold.png")
+            selectOutlierSample(values$lacenObject, height = height_val, plot = FALSE, filename = file_name)
+            output$cluster_tree_plot <- renderUI({
+                tags$a(href = file.path("users_data", values$user_id, "clusterTreeThreshold.png"), target = "_blank",
+                       tags$img(src = file.path("users_data", values$user_id, "clusterTreeThreshold.png"), style = "max-width: 100%; height: auto;"))
+            })
+        }, error = function(e) {
+            showNotification(paste("Error during clustering:", e$message), type = "error", duration = NULL)
+        }, finally = {
+            session$sendCustomMessage(type = 'hide_overlay', message = list())
         })
-        session$sendCustomMessage(type = 'hide_overlay', message = list())
     })
 
     observeEvent(input$accept_height_btn, {
         session$sendCustomMessage(type = 'show_overlay', message = list())
-        req(values$lacenObject)
-        height_val <- if (input$height_input == 0) FALSE else input$height_input
-        values$lacenObject <- cutOutlierSample(values$lacenObject, height = height_val)
-        updateNavbarPage(session, "main_nav", selected = "soft_threshold")
-        file_name <- file.path("users", values$user_id, "indicePower.png")
-
-        # Initial soft threshold plot
-        plotSoftThreshold(values$lacenObject,
-            filename = file_name,
-            maxBlockSize = 20000,
-            plot = FALSE)
-
-           
-        output$soft_threshold_plot <- renderUI({
-            tags$a(
-                href = file.path("users_data", values$user_id, "indicePower.png"), target = "_blank",
-                tags$img(src = file.path("users_data", values$user_id, "indicePower.png"), style = "max-width: 100%; height: auto;")
-            )
+        tryCatch({
+            req(values$lacenObject)
+            height_val <- if (input$height_input == 0) FALSE else input$height_input
+            values$lacenObject <- cutOutlierSample(values$lacenObject, height = height_val)
+            updateNavbarPage(session, "main_nav", selected = "soft_threshold")
+            file_name <- file.path("users", values$user_id, "indicePower.png")
+            plotSoftThreshold(values$lacenObject, filename = file_name, maxBlockSize = 20000, plot = FALSE)
+            output$soft_threshold_plot <- renderUI({
+                tags$a(href = file.path("users_data", values$user_id, "indicePower.png"), target = "_blank",
+                       tags$img(src = file.path("users_data", values$user_id, "indicePower.png"), style = "max-width: 100%; height: auto;"))
+            })
+        }, error = function(e) {
+            showNotification(paste("Error accepting height:", e$message), type = "error", duration = NULL)
+        }, finally = {
+            session$sendCustomMessage(type = 'hide_overlay', message = list())
         })
-        session$sendCustomMessage(type = 'hide_overlay', message = list())
     })
 
     # 5.0 Soft Threshold
     observeEvent(input$run_soft_threshold_btn, {
         session$sendCustomMessage(type = 'show_overlay', message = list())
-        req(values$lacenObject)
-
-        values$lacenObject <- selectSoftThreshold(
-            lacenObject = values$lacenObject,
-            indicePower = input$indicePower_input
-        )
-
-        updateNavbarPage(session, "main_nav", selected = "summarize_enrich")
-
-        # Save high-res images to the www directory
-        enriched_path <- file.path("users", values$user_id, "enrichedgraph.png")
-        stacked_path <- file.path("users", values$user_id, "stackedplot.png")
-        mod_path <- file.path("users", values$user_id)
-        log_path <- file.path("users", values$user_id, "log.txt")
-
-        values$lacenObject <- summarizeAndEnrichModules(
-            lacenObject = values$lacenObject,
-            maxBlockSize = 20000,
-            filename = enriched_path,
-            modPath = mod_path,
-            log = TRUE,
-            log_path = log_path
-        )
-
-        stackedBarplot(
-            values$lacenObject,
-            filename = stacked_path,
-            plot = FALSE
-        )
-
-        # Save lacenObject to RDS
-        saveRDS(values$lacenObject, file.path("users", values$user_id, "lacenObject.rds"))
-
-        output$enriched_graph_output <- renderUI({
-            tags$a(
-                href = file.path("users_data", values$user_id, "enrichedgraph.png"), target = "_blank",
-                tags$img(src = file.path("users_data", values$user_id, "enrichedgraph.png"), style = "max-width: 100%; height: auto;")
-            )
+        tryCatch({
+            req(values$lacenObject)
+            values$lacenObject <- selectSoftThreshold(values$lacenObject, indicePower = input$indicePower_input)
+            updateNavbarPage(session, "main_nav", selected = "summarize_enrich")
+            enriched_path <- file.path("users", values$user_id, "enrichedgraph.png")
+            stacked_path <- file.path("users", values$user_id, "stackedplot.png")
+            mod_path <- file.path("users", values$user_id)
+            log_path <- file.path("users", values$user_id, "log.txt")
+            values$lacenObject <- summarizeAndEnrichModules(values$lacenObject, maxBlockSize = 20000, filename = enriched_path, modPath = mod_path, log = TRUE, log_path = log_path)
+            stackedBarplot(values$lacenObject, filename = stacked_path, plot = FALSE)
+            saveRDS(values$lacenObject, file.path("users", values$user_id, "lacenObject.rds"))
+            output$enriched_graph_output <- renderUI({ tags$a(href = file.path("users_data", values$user_id, "enrichedgraph.png"), target = "_blank", tags$img(src = file.path("users_data", values$user_id, "enrichedgraph.png"), style = "max-width: 100%; height: auto;")) })
+            output$stacked_barplot_output <- renderUI({ tags$a(href = file.path("users_data", values$user_id, "stackedplot.png"), target = "_blank", tags$img(src = file.path("users_data", values$user_id, "stackedplot.png"), style = "max-width: 100%; height: auto;")) })
+        }, error = function(e) {
+            showNotification(paste("Error during soft threshold selection:", e$message), type = "error", duration = NULL)
+        }, finally = {
+            session$sendCustomMessage(type = 'hide_overlay', message = list())
         })
-
-        output$stacked_barplot_output <- renderUI({
-            tags$a(
-                href = file.path("users_data", values$user_id, "stackedplot.png"), target = "_blank",
-                tags$img(src = file.path("users_data", values$user_id, "stackedplot.png"), style = "max-width: 100%; height: auto;")
-            )
-        })
-        session$sendCustomMessage(type = 'hide_overlay', message = list())
     })
 
     # 6.0 Heatmap
     observeEvent(input$run_heatmap_btn, {
         session$sendCustomMessage(type = 'show_overlay', message = list())
-        req(values$lacenObject)
-        submodule_val <- if (input$submodule_input == 0) FALSE else input$submodule_input
-        file_name <- file.path("users", values$user_id, paste("heatmap_", input$module_input, ".png", sep = ""))
-        out_tsv <- file.path("users", values$user_id, paste("heatmap_", input$module_input, ".tsv", sep = ""))
-        image_file_name <- paste("heatmap_", input$module_input, ".png", sep = "")
-
-        test_module <- function(module, submodule, summdf){
-            suppressWarnings(
-                sel_modules <- (names(summdf) == "module" | !is.na(as.numeric(names(summdf))))
-            )
-            valid_modules <- summdf[, sel_modules]
-            valid_modules <- valid_modules %>% 
-                group_by(module) %>%
-                summarize(across(everything(), any), .groups = 'drop')
-            if(module %in% valid_modules$module){
-                if(isFALSE(submodule)){
-                return(TRUE)
-                } else {
-                submodules <- unlist(valid_modules[valid_modules$module == module, -1])
-                submodules <- as.numeric(names(submodules)[submodules == TRUE])
-                return((module %in% valid_modules$module) & (submodule %in% submodules))
+        tryCatch({
+            req(values$lacenObject)
+            submodule_val <- if (input$submodule_input == 0) FALSE else input$submodule_input
+            
+            test_module <- function(module, submodule, summdf){
+                suppressWarnings(sel_modules <- (names(summdf) == "module" | !is.na(as.numeric(names(summdf)))))
+                valid_modules <- summdf[, sel_modules] %>% group_by(module) %>% summarize(across(everything(), any), .groups = 'drop')
+                if(module %in% valid_modules$module){
+                    if(isFALSE(submodule)) return(TRUE)
+                    submodules <- unlist(valid_modules[valid_modules$module == module, -1])
+                    submodules <- as.numeric(names(submodules)[submodules == TRUE])
+                    return(submodule %in% submodules)
                 }
+                return(FALSE)
             }
 
-            return(FALSE)
-        }
-
-        if(test_module(input$module_input, submodule_val, values$lacenObject$summdf)){
-            tryCatch({
-                heatmapTopConnectivity(
-                    lacenObject = values$lacenObject,
-                    module = input$module_input,
-                    submodule = submodule_val,
-                    filename = file_name,
-                    outTSV = out_tsv
-                )
-
+            if(test_module(input$module_input, submodule_val, values$lacenObject$summdf)){
+                if (isFALSE(submodule_val)) {
+                    file_name <- file.path("users",
+                            values$user_id,
+                            paste0("heatmap_", input$module_input, ".png"))
+                    out_tsv <- file.path("users",
+                            values$user_id,
+                            paste0("heatmap_", input$module_input, ".tsv"))
+                } else {
+                    file_name <- file.path("users",
+                            values$user_id,
+                            paste0("heatmap_", input$module_input, "_", submodule_val, ".png"))
+                    out_tsv <- file.path("users",
+                            values$user_id,
+                            paste0("heatmap_", input$module_input, "_", submodule_val, ".tsv"))
+                }
+                heatmapTopConnectivity(values$lacenObject,
+                            module = input$module_input,
+                            submodule = submodule_val,
+                            filename = file_name,
+                            outTSV = out_tsv)
                 output$heatmap_plot <- renderUI({
-                    tags$a(
-                        href = file.path("users_data", values$user_id, image_file_name), target = "_blank",
-                        tags$img(
-                            src = file.path("users_data", values$user_id, image_file_name),
-                            style = "max-width: 100%; height: auto;"
-                        )
-                    )
+                    tags$a(href = file.path("users_data", values$user_id, basename(file_name)), target = "_blank",
+                           tags$img(src = file.path("users_data", values$user_id, basename(file_name)), style = "max-width: 100%; height: auto;"))
                 })
-            }, error = function(e) {
-                showNotification(
-                    paste("Heatmap generation failed: low connectivity module"),
-                    type = "error", duration = NULL
-                )
-            })
-        } else {
-            showNotification("Invalid module/submodule. See the last plot for reference.", type = "error")
-        }
-
-        session$sendCustomMessage(type = 'hide_overlay', message = list())
+            } else {
+                showNotification("Invalid module/submodule. See the last plot for reference.", type = "error")
+            }
+        }, error = function(e) {
+            showNotification(paste("Heatmap generation failed:", e$message), type = "error", duration = NULL)
+        }, finally = {
+            session$sendCustomMessage(type = 'hide_overlay', message = list())
+        })
     })
 
     # LNC-centric Analysis Tab Activation
@@ -626,87 +528,46 @@ server <- function(input, output, session) {
         }
     })
 
-
     # 7.0 lnc-centric analysis
     observeEvent(input$run_lnc_analysis_btn, {
         session$sendCustomMessage(type = 'show_overlay', message = list())
-        req(values$lacenObject, input$lncSymbol_input)
-        # Save high-res images to the www directory
-        net_path <- file.path("users", values$user_id, paste0(input$lncSymbol_input, "_netPlot.png"))
-        enr_path <- file.path("users", values$user_id, paste0(input$lncSymbol_input, "_enrPlot.png"))
-        connec_path <- file.path("users", values$user_id, paste0(input$lncSymbol_input, "_connectivities.csv"))
-        enr_csv_path <- file.path("users", values$user_id, paste0(input$lncSymbol_input, "_enrichment.csv"))
-        image_filename_net <- paste0(input$lncSymbol_input, "_netPlot.png")
-        image_filename_enr <- paste0(input$lncSymbol_input, "_enrPlot.png")
-
-
         tryCatch({
+            req(values$lacenObject, input$lncSymbol_input)
+            net_path <- file.path("users", values$user_id, paste0(input$lncSymbol_input, "_netPlot.png"))
+            enr_path <- file.path("users", values$user_id, paste0(input$lncSymbol_input, "_enrPlot.png"))
+            connec_path <- file.path("users", values$user_id, paste0(input$lncSymbol_input, "_connectivities.csv"))
+            enr_csv_path <- file.path("users", values$user_id, paste0(input$lncSymbol_input, "_enrichment.csv"))
+            
             lncRNAEnrich(
-                lncName = input$lncSymbol_input,
-                lacenObject = values$lacenObject,
-                nGenesNet = input$nGenesNet_input,
-                nTerm = input$nTerm_input,
-                nGenes = input$nGenes_input,
-                sources = input$sources_input,
-                netPath = net_path,
-                enrPath = enr_path,
-                connecPath = connec_path,
-                enrCsvPath = enr_csv_path
-        )
-
-            output$lnc_net_plot_output <- renderUI({
-                tags$a(
-                    href = file.path("users_data", values$user_id, image_filename_net), target = "_blank",
-                    tags$img(src = file.path("users_data", values$user_id, image_filename_net), style = "max-width: 100%; height: auto;")
-                )
-            })
-
-            output$lnc_enr_plot_output <- renderUI({
-                tags$a(
-                    href = file.path("users_data", values$user_id, image_filename_enr), target = "_blank",
-                    tags$img(src = file.path("users_data", values$user_id, image_filename_enr), style = "max-width: 100%; height: auto;")
-                )
-            })
-        }, error = function(e) {
-            showNotification(
-                paste("No enrichment results. Please increase nGenes number or try another lncRNA."),
-                type = "error", duration = NULL
+                lncName = input$lncSymbol_input, lacenObject = values$lacenObject,
+                nGenesNet = input$nGenesNet_input, nTerm = input$nTerm_input, nGenes = input$nGenes_input,
+                sources = input$sources_input, netPath = net_path, enrPath = enr_path,
+                connecPath = connec_path, enrCsvPath = enr_csv_path
             )
-        })
 
-        session$sendCustomMessage(type = 'hide_overlay', message = list())
+            image_filename_net <- paste0(input$lncSymbol_input, "_netPlot.png")
+            image_filename_enr <- paste0(input$lncSymbol_input, "_enrPlot.png")
+            output$lnc_net_plot_output <- renderUI({ tags$a(href = file.path("users_data", values$user_id, image_filename_net), target = "_blank", tags$img(src = file.path("users_data", values$user_id, image_filename_net), style = "max-width: 100%; height: auto;")) })
+            output$lnc_enr_plot_output <- renderUI({ tags$a(href = file.path("users_data", values$user_id, image_filename_enr), target = "_blank", tags$img(src = file.path("users_data", values$user_id, image_filename_enr), style = "max-width: 100%; height: auto;")) })
+        }, error = function(e) {
+            showNotification(paste("LNC-centric analysis failed: Please try to increase the nGenes or try another lncRNA"), type = "error", duration = NULL)
+        }, finally = {
+            session$sendCustomMessage(type = 'hide_overlay', message = list())
+        })
     })
 
     # 8.0 Download Data
     output$download_data_btn <- downloadHandler(
-        filename = function() {
-            "lacen_pipeline_results.zip"
-        },
+        filename = function() { "lacen_pipeline_results.zip" },
         content = function(file) {
-            # Create a temporary directory
             temp_zip_dir <- tempdir()
-            # Create the desired output directory structure within the temp directory
             final_output_folder <- file.path(temp_zip_dir, "lacen_output")
             dir.create(final_output_folder, recursive = TRUE)
-
-            # List all files in the user's directory
             all_user_files <- list.files(file.path("users", values$user_id), full.names = TRUE)
             all_user_files <- all_user_files[!grepl("*.rds", all_user_files)]
-            files_to_copy <- all_user_files
-
-            # Copy each desired file to the new structure
-            for (f in files_to_copy) {
-                file.copy(f, file.path(final_output_folder, basename(f)))
-            }
-
-            # Zip the contents of the temporary directory.
-            # The 'root' argument here is crucial: it makes the paths in the zip relative to temp_zip_dir.
-            # So, 'temp_zip_dir/lacen_output/file.png' becomes 'lacen_output/file.png' in the zip.
-            # Change working directory to the temporary directory to ensure correct zipping structure
+            file.copy(all_user_files, file.path(final_output_folder, basename(all_user_files)))
             old_wd <- setwd(temp_zip_dir)
-            on.exit(setwd(old_wd)) # Ensure we revert the working directory
-
-            # Zip the 'lacen_output' folder. The 'files' argument should be the folder name relative to the current WD.
+            on.exit(setwd(old_wd))
             utils::zip(zipfile = file, files = "lacen_output")
         }
     )
