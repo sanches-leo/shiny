@@ -360,7 +360,9 @@ server <- function(input, output, session) {
             # Use a tryCatch to handle potential errors during file reading
             tryCatch({
                 expressionDGEData <- read.csv(input$expressionDGEData_file$datapath)
-                rawExpressionData <- read.csv(input$rawExpressionData_file$datapath)
+                rawExpressionData <- read.csv(input$rawExpressionData_file$datapath,
+                                              row.names = 1,
+                                              check.names = FALSE)
                 traitsData <- read.csv(input$traitsData_file$datapath)
 
                 # --- Correctly read annotationData ---
