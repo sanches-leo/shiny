@@ -122,10 +122,29 @@ ui <- fluidPage(
                     )
                 )
             ),
+            tabPanel("Bootstrap",
+                value = "bootstrap",
+                fluidPage(
+                    titlePanel("Bootstrap Analysis (Optional)"),
+                    p("This step is optional and can be very time-consuming (from hours to days). It remakes the network multiple times to find the most robust modules."),
+                    hr(),
+                    actionButton("run_bootstrap_btn", "Run Bootstrap Analysis"),
+                    actionButton("skip_bootstrap_btn", "Skip and Proceed to Summarize/Enrich"),
+                    hr(),
+                    uiOutput("bootstrap_plots_output"),
+                    hr(),
+                    div(id = "bootstrap_threshold_div", style = "display: none;",
+                        numericInput("bootstrap_threshold_input", "Bootstrap Threshold", value = 0.8, min = 0, max = 1, step = 0.05),
+                        actionButton("set_bootstrap_btn", "Apply Threshold and Proceed")
+                    )
+                )
+            ),
             tabPanel("Summarize and Enrich",
                 value = "summarize_enrich",
                 fluidPage(
                     titlePanel("Summarize and Enrich Modules"),
+                    actionButton("run_summarize_enrich_btn", "Run Summarize and Enrich"),
+                    hr(),
                     fluidRow(
                     column(6, uiOutput("enriched_graph_output")),
                     column(6, uiOutput("stacked_barplot_output"))
@@ -449,7 +468,71 @@ server <- function(input, output, session) {
         tryCatch({
             req(values$lacenObject)
             values$lacenObject <- selectSoftThreshold(values$lacenObject, indicePower = input$indicePower_input)
+            updateNavbarPage(session, "main_nav", selected = "bootstrap")
+        }, error = function(e) {
+            showNotification(paste("Error during soft threshold selection:", e$message), type = "error", duration = NULL)
+        }, finally = {
+            session$sendCustomMessage(type = 'hide_overlay', message = list())
+        })
+    })
+
+    # Bootstrap
+    observeEvent(input$run_bootstrap_btn, {
+        session$sendCustomMessage(type = 'show_overlay', message = list())
+        showNotification("Running bootstrap analysis. This may take a very long time.", type = "warning", duration = NULL)
+        tryCatch({
+            req(values$lacenObject)
+            bootstrap_csv_path <- file.path("users", values$user_id, "bootstrap.csv")
+            mod_groups_plot_path <- file.path("users", values$user_id, "moduleGroups.png")
+            stability_plot_path <- file.path("users", values$user_id, "moduleStability.png")
+
+            values$lacenObject <- lacenBootstrap(
+                lacenObject = values$lacenObject,
+                numberOfIterations = 100,
+                maxBlockSize = 50000,
+                csvPath = bootstrap_csv_path,
+                pathModGroupsPlot = mod_groups_plot_path,
+                pathStabilityPlot = stability_plot_path
+            )
+
+            output$bootstrap_plots_output <- renderUI({
+                list(
+                    tags$h4("Bootstrap Results"),
+                    tags$a(href = file.path("users_data", values$user_id, "moduleGroups.png"), target = "_blank",
+                           tags$img(src = file.path("users_data", values$user_id, "moduleGroups.png"), style = "max-width: 100%; height: auto;")),
+                    tags$a(href = file.path("users_data", values$user_id, "moduleStability.png"), target = "_blank",
+                           tags$img(src = file.path("users_data", values$user_id, "moduleStability.png"), style = "max-width: 100%; height: auto;"))
+                )
+            })
+            shinyjs::show("bootstrap_threshold_div")
+
+        }, error = function(e) {
+            showNotification(paste("Error during bootstrap analysis:", e$message), type = "error", duration = NULL)
+        }, finally = {
+            session$sendCustomMessage(type = 'hide_overlay', message = list())
+        })
+    })
+
+    observeEvent(input$skip_bootstrap_btn, {
+        updateNavbarPage(session, "main_nav", selected = "summarize_enrich")
+    })
+
+    observeEvent(input$set_bootstrap_btn, {
+        session$sendCustomMessage(type = 'show_overlay', message = list())
+        tryCatch({
+            req(values$lacenObject)
+            values$lacenObject <- setBootstrap(lacenObject = values$lacenObject, cutBootstrap = input$bootstrap_threshold_input)
             updateNavbarPage(session, "main_nav", selected = "summarize_enrich")
+        }, error = function(e) {
+            showNotification(paste("Error after setting bootstrap:", e$message), type = "error", duration = NULL)
+        }, finally = {
+            session$sendCustomMessage(type = 'hide_overlay', message = list())
+        })
+    })
+
+    observeEvent(input$run_summarize_enrich_btn, {
+        session$sendCustomMessage(type = 'show_overlay', message = list())
+        tryCatch({
             enriched_path <- file.path("users", values$user_id, "enrichedgraph.png")
             stacked_path <- file.path("users", values$user_id, "stackedplot.png")
             mod_path <- file.path("users", values$user_id)
@@ -460,7 +543,7 @@ server <- function(input, output, session) {
             output$enriched_graph_output <- renderUI({ tags$a(href = file.path("users_data", values$user_id, "enrichedgraph.png"), target = "_blank", tags$img(src = file.path("users_data", values$user_id, "enrichedgraph.png"), style = "max-width: 100%; height: auto;")) })
             output$stacked_barplot_output <- renderUI({ tags$a(href = file.path("users_data", values$user_id, "stackedplot.png"), target = "_blank", tags$img(src = file.path("users_data", values$user_id, "stackedplot.png"), style = "max-width: 100%; height: auto;")) })
         }, error = function(e) {
-            showNotification(paste("Error during soft threshold selection:", e$message), type = "error", duration = NULL)
+            showNotification(paste("Error during Summarize/Enrich:", e$message), type = "error", duration = NULL)
         }, finally = {
             session$sendCustomMessage(type = 'hide_overlay', message = list())
         })
