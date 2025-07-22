@@ -30,6 +30,7 @@ ui <- fluidPage(
             tabPanel("Greetings",
                 value = "greetings",
                 fluidPage(
+                    actionButton("help_greetings", "Help", class = "pull-right"),
                     titlePanel("Welcome to the LACEN Shiny App"),
                     p("This application provides a graphical interface for the LACEN pipeline."),
                     actionButton("start_btn", "Start")
@@ -38,6 +39,7 @@ ui <- fluidPage(
             tabPanel("Load Data",
                 value = "load_data",
                 fluidPage(
+                    actionButton("help_load_data", "Help", class = "pull-right"),
                     titlePanel("Load Data"),
                     sidebarLayout(
                         sidebarPanel(
@@ -68,6 +70,7 @@ ui <- fluidPage(
             tabPanel("Filter and Transform",
                 value = "filter_transform",
                 fluidPage(
+                    actionButton("help_filter_transform", "Help", class = "pull-right"),
                     titlePanel("Filter and Transform"),
                     sidebarLayout(
                         sidebarPanel(
@@ -93,6 +96,7 @@ ui <- fluidPage(
             tabPanel("Clustering",
                 value = "clustering",
                 fluidPage(
+                    actionButton("help_clustering", "Help", class = "pull-right"),
                     titlePanel("Clustering"),
                     sidebarLayout(
                         sidebarPanel(
@@ -110,6 +114,7 @@ ui <- fluidPage(
             tabPanel("Soft Threshold",
                 value = "soft_threshold",
                 fluidPage(
+                    actionButton("help_soft_threshold", "Help", class = "pull-right"),
                     titlePanel("Soft Threshold"),
                     sidebarLayout(
                         sidebarPanel(
@@ -125,6 +130,7 @@ ui <- fluidPage(
             tabPanel("Bootstrap",
                 value = "bootstrap",
                 fluidPage(
+                    actionButton("help_bootstrap", "Help", class = "pull-right"),
                     titlePanel("Bootstrap Analysis (Optional)"),
                     p("This step is optional and can be very time-consuming (from hours to days). It remakes the network multiple times to find the most robust modules."),
                     hr(),
@@ -142,6 +148,7 @@ ui <- fluidPage(
             tabPanel("Summarize and Enrich",
                 value = "summarize_enrich",
                 fluidPage(
+                    actionButton("help_summarize_enrich", "Help", class = "pull-right"),
                     titlePanel("Summarize and Enrich Modules"),
                     actionButton("run_summarize_enrich_btn", "Run Summarize and Enrich"),
                     hr(),
@@ -154,6 +161,7 @@ ui <- fluidPage(
             tabPanel("Heatmap",
                 value = "heatmap",
                 fluidPage(
+                    actionButton("help_heatmap", "Help", class = "pull-right"),
                     titlePanel("Heatmap"),
                     sidebarLayout(
                         sidebarPanel(
@@ -170,6 +178,7 @@ ui <- fluidPage(
             tabPanel("LNC-centric Analysis",
                 value = "lnc_centric",
                 fluidPage(
+                    actionButton("help_lnc_centric", "Help", class = "pull-right"),
                     titlePanel("LNC-centric Analysis"),
                     sidebarLayout(
                         sidebarPanel(
@@ -205,6 +214,80 @@ ui <- fluidPage(
 
 # Server Logic
 server <- function(input, output, session) {
+    # Help button observers
+    observeEvent(input$help_greetings, {
+        showModal(modalDialog(
+            title = "Greetings",
+            includeMarkdown("docs/greetings.md"),
+            easyClose = TRUE,
+            footer = NULL
+        ))
+    })
+    observeEvent(input$help_load_data, {
+        showModal(modalDialog(
+            title = "Load Data",
+            includeMarkdown("docs/loadData.md"),
+            easyClose = TRUE,
+            footer = NULL
+        ))
+    })
+    observeEvent(input$help_filter_transform, {
+        showModal(modalDialog(
+            title = "Filter and Transform",
+            includeMarkdown("docs/filterTransform.md"),
+            easyClose = TRUE,
+            footer = NULL
+        ))
+    })
+    observeEvent(input$help_clustering, {
+        showModal(modalDialog(
+            title = "Clustering",
+            includeMarkdown("docs/clustering.md"),
+            easyClose = TRUE,
+            footer = NULL
+        ))
+    })
+    observeEvent(input$help_soft_threshold, {
+        showModal(modalDialog(
+            title = "Soft Threshold",
+            includeMarkdown("docs/softThreshold.md"),
+            easyClose = TRUE,
+            footer = NULL
+        ))
+    })
+    observeEvent(input$help_bootstrap, {
+        showModal(modalDialog(
+            title = "Bootstrap",
+            includeMarkdown("docs/bootstrap.md"),
+            easyClose = TRUE,
+            footer = NULL
+        ))
+    })
+    observeEvent(input$help_summarize_enrich, {
+        showModal(modalDialog(
+            title = "Summarize and Enrich",
+            includeMarkdown("docs/summarizeEnrich.md"),
+            easyClose = TRUE,
+            footer = NULL
+        ))
+    })
+    observeEvent(input$help_heatmap, {
+        showModal(modalDialog(
+            title = "Heatmap",
+            includeMarkdown("docs/heatmap.md"),
+            easyClose = TRUE,
+            footer = NULL
+        ))
+    })
+    observeEvent(input$help_lnc_centric, {
+        showModal(modalDialog(
+            title = "LNC-centric Analysis",
+            includeMarkdown("docs/lncCentric.md"),
+            easyClose = TRUE,
+            footer = NULL
+        ))
+    })
+
     # Reactive values to store data and state
     values <- reactiveValues(
         lacenObject = NULL,
@@ -214,10 +297,9 @@ server <- function(input, output, session) {
     )
 
     # Reactive observer to regenerate plots when lacenObject is loaded from a saved session
-    observe({
+    observeEvent(input$main_nav, {
         req(values$lacenObject)
-        # Check if we are in a restored session by looking at the selected tab
-        if (input$main_nav == "heatmap") {
+        if (identical(input$main_nav, "heatmap")) {
 
             # Regenerate Cluster Tree Plot
             cluster_tree_path_threshold <- file.path("users", values$user_id, "clusterTreeThreshold.png")
