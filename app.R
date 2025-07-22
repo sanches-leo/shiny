@@ -56,10 +56,17 @@ ui <- fluidPage(
                                       accept = c(".csv",
                                                  ".gtf",
                                                  ".gtf.gz")),
+                            selectInput("organism", "Select Organism",
+                                        choices = c("Homo sapiens", "Mus musculus", "Rattus norvegicus", "Danio rerio",
+                                                    "Drosophila melanogaster", "Caenorhabditis elegans", "Saccharomyces cerevisiae",
+                                                    "Arabidopsis thaliana", "Gallus gallus", "Sus scrofa", "Bos taurus",
+                                                    "Canis familiaris"),
+                                        selected = "Homo sapiens"),
                             hr(),
                             actionButton("use_demo_data_btn", "Use Demo Data"),
                             hr(),
-                            actionButton("check_data_btn", "Check Data Format", disabled = TRUE)
+                            actionButton("check_data_btn", "Check Data Format", disabled = TRUE),
+
                         ),
                         mainPanel(
                             verbatimTextOutput("check_data_output")
@@ -615,11 +622,41 @@ server <- function(input, output, session) {
     observeEvent(input$run_summarize_enrich_btn, {
         session$sendCustomMessage(type = 'show_overlay', message = list())
         tryCatch({
+            scientific_name <- c(
+                "Homo sapiens", "Mus musculus", "Rattus norvegicus", "Danio rerio",
+                "Drosophila melanogaster", "Caenorhabditis elegans", "Saccharomyces cerevisiae",
+                "Arabidopsis thaliana", "Gallus gallus", "Sus scrofa", "Bos taurus",
+                "Canis familiaris")
+
+            gprofiler_code <- c(
+                "hsapiens", "mmusculus", "rnorvegicus", "drerio", "dmelanogaster", "celegans",
+                "scerevisiae", "athaliana", "ggallus", "sscrofa", "btaurus",
+                "cfamiliaris")
+
+            orgdb_package <- c(
+                "org.Hs.eg.db", "org.Mm.eg.db", "org.Rn.eg.db", "org.Dr.eg.db", "org.Dm.eg.db",
+                "org.Ce.eg.db", "org.Sc.sgd.db", "org.At.tair.db", "org.Gg.eg.db", "org.Ss.eg.db",
+                "org.Bt.eg.db", "org.Cf.eg.db")
+
+            user_organism_index <- which(input$organism == scientific_name)
+            values$organism <- gprofiler_code[user_organism_index]
+            values$orgdb <- orgdb_package[user_organism_index]
+
+            if (!require(values$orgdb, quietly = TRUE, character.only = TRUE))
+                BiocManager::install(values$orgdb)
+
             enriched_path <- file.path("users", values$user_id, "enrichedgraph.png")
             stacked_path <- file.path("users", values$user_id, "stackedplot.png")
             mod_path <- file.path("users", values$user_id)
             log_path <- file.path("users", values$user_id, "log.txt")
-            values$lacenObject <- summarizeAndEnrichModules(values$lacenObject, maxBlockSize = 20000, filename = enriched_path, modPath = mod_path, log = TRUE, log_path = log_path)
+            values$lacenObject <- summarizeAndEnrichModules(values$lacenObject,
+                                                                maxBlockSize = 20000,
+                                                                filename = enriched_path,
+                                                                modPath = mod_path,
+                                                                log = TRUE,
+                                                                log_path = log_path,
+                                                                organism = values$organism,
+                                                                orgdb = values$orgdb)
             stackedBarplot(values$lacenObject, filename = stacked_path, plot = FALSE)
             saveRDS(values$lacenObject, file.path("users", values$user_id, "lacenObject.rds"))
             output$enriched_graph_output <- renderUI({ tags$a(href = file.path("users_data", values$user_id, "enrichedgraph.png"), target = "_blank", tags$img(src = file.path("users_data", values$user_id, "enrichedgraph.png"), style = "max-width: 100%; height: auto;")) })
