@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  shiny:
+    build: .
+    ports:
+      - "3838:3838"
+    volumes:
+      - ./app.R:/srv/shiny-server/app.R
+      - ./www:/srv/shiny-server/www
+      - ./.pass:/srv/shiny-server/.pass
+      - ./users:/srv/shiny-server/users
+      - ./docs:/srv/shiny-server/docs
+      - ./log:/srv/shiny-server/log
+    restart: always

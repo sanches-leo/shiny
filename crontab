@@ -1,0 +1,1 @@
+0 0 * * * /bin/bash /srv/shiny-server/cleanup.sh
