@@ -518,11 +518,12 @@ server <- function(input, output, session) {
         tryCatch({
             req(values$lacenObject)
             height_val <- if (input$height_input == 0) FALSE else input$height_input
-            file_name <- file.path("users", values$user_id, "clusterTreeThreshold.png")
+            timestamp <- as.integer(Sys.time())
+            file_name <- file.path("users", values$user_id, paste0("clusterTreeThreshold_", timestamp, ".png"))
             selectOutlierSample(values$lacenObject, height = height_val, plot = FALSE, filename = file_name)
             output$cluster_tree_plot <- renderUI({
-                tags$a(href = file.path("users_data", values$user_id, "clusterTreeThreshold.png"), target = "_blank",
-                       tags$img(src = file.path("users_data", values$user_id, "clusterTreeThreshold.png"), style = "max-width: 100%; height: auto;"))
+                tags$a(href = file.path("users_data", values$user_id, basename(file_name)), target = "_blank",
+                       tags$img(src = file.path("users_data", values$user_id, basename(file_name)), style = "max-width: 100%; height: auto;"))
             })
         }, error = function(e) {
             showNotification(paste("Error during clustering:", e$message), type = "error", duration = NULL)
