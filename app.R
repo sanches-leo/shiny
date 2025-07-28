@@ -31,7 +31,7 @@ ui <- fluidPage(
                 value = "wellcome",
                 fluidPage(
                     titlePanel("Welcome to the LACEN Shiny App"),
-                    p("This application provides a graphical interface for the LACEN pipeline."),
+                    includeMarkdown("docs/wellcome.md"),
                     actionButton("start_btn", "Start")
                 )
             ),
