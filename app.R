@@ -17,25 +17,27 @@ ui <- fluidPage(
   div(id = "loading-overlay", div(class = "loader"), p("Processing..."), style = "display: none;"),
   div(id = "login_screen",
       fluidPage(
-        titlePanel("User Login"),
-        textInput("user_id", "Enter User ID:"),
-        passwordInput("password", "Enter Password:"),
-        actionButton("login_btn", "Login"),
-        textOutput("login_message")
+          fluidRow(
+              br(),  # Adds a vertical space
+              column(2,              
+                  wellPanel(
+                      h4("User Login"),
+                      textInput("user_id", "Enter User ID:"),
+                      passwordInput("password", "Enter Password:"),
+                      actionButton("login_btn", "Login"),
+                      textOutput("login_message")
+                  )
+              ),
+              column(10,
+                  includeMarkdown("docs/wellcome.md")
+              )
+          )
       )
   ),
   div(id = "main_app", style = "display: none;",
       navbarPage(
         "LACEN Pipeline",
         id = "main_nav",
-        tabPanel("Wellcome",
-                 value = "wellcome",
-                 fluidPage(
-                   titlePanel("Welcome to the LACEN Shiny App"),
-                   includeMarkdown("docs/wellcome.md"),
-                   actionButton("start_btn", "Start")
-                 )
-        ),
         tabPanel("Load Data",
                  value = "load_data",
                  fluidPage(
@@ -386,6 +388,7 @@ server <- function(input, output, session) {
         } else {
           shinyjs::hide("login_screen")
           shinyjs::show("main_app")
+          updateNavbarPage(session, "main_nav", selected = "load_data")
         }
       }
     }, error = function(e) {
@@ -393,11 +396,6 @@ server <- function(input, output, session) {
     }, finally = {
       session$sendCustomMessage(type = 'hide_overlay', message = list())
     })
-  })
-  
-  # 1.0 Welcomme
-  observeEvent(input$start_btn, {
-    updateNavbarPage(session, "main_nav", selected = "load_data")
   })
   
   # 2.0 Loading Data

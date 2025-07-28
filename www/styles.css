@@ -28,3 +28,18 @@
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
+
+#login_screen .wellPanel {
+    width: 50% !important;
+    margin: auto !important;
+}
+
+#login_screen .titlePanel {
+    text-align: center !important;
+    font-size: 1.5em !important;
+}
+
+#login_screen p {
+    font-size: 1.1em !important;
+    text-align: justify !important;
+}
