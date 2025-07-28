@@ -108,7 +108,7 @@ ui <- fluidPage(
                    actionButton("help_clustering", "Help", class = "pull-right"),
                    titlePanel("Clustering"),
                    sidebarLayout(
-                     sidebarPanel(
+                     sidebarPanel(width = 3,
                        numericInput("height_input", "Select Height", 0),
                        actionButton("rerun_clustering_btn", "Re-run Clustering"),
                        hr(),
@@ -126,7 +126,7 @@ ui <- fluidPage(
                    actionButton("help_soft_threshold", "Help", class = "pull-right"),
                    titlePanel("Soft Threshold"),
                    sidebarLayout(
-                     sidebarPanel(
+                     sidebarPanel(width = 3,
                        numericInput("indicePower_input", "Select Indice Power", 9, min = 1, max = 20),
                        actionButton("run_soft_threshold_btn", "Select Power and Proceed")
                      ),
@@ -141,16 +141,24 @@ ui <- fluidPage(
                  fluidPage(
                    actionButton("help_bootstrap", "Help", class = "pull-right"),
                    titlePanel("Bootstrap Analysis (Optional)"),
-                   p("This step is optional and can be very time-consuming (from hours to days). It remakes the network multiple times to find the most robust modules."),
-                   hr(),
-                   actionButton("run_bootstrap_btn", "Run Bootstrap Analysis"),
-                   actionButton("skip_bootstrap_btn", "Skip and Proceed to Summarize/Enrich"),
-                   hr(),
-                   uiOutput("bootstrap_plots_output"),
-                   hr(),
-                   div(id = "bootstrap_threshold_div", style = "display: none;",
-                       numericInput("bootstrap_threshold_input", "Bootstrap Threshold", value = 0.8, min = 0, max = 1, step = 0.05),
-                       actionButton("set_bootstrap_btn", "Apply Threshold and Proceed")
+                   sidebarLayout(
+                     sidebarPanel(width = 3,
+                       p("This step is optional and can be very time-consuming (from hours to days). It remakes the network multiple times to find the most robust modules."),
+                       hr(),
+                       actionButton("run_bootstrap_btn", "Run Bootstrap Analysis"),
+                       actionButton("skip_bootstrap_btn", "Skip and Proceed to Summarize/Enrich"),
+                       hr(),
+                       div(id = "bootstrap_threshold_div", style = "display: none;",
+                           numericInput("bootstrap_threshold_input", "Bootstrap Threshold", value = 0.8, min = 0, max = 1, step = 0.05),
+                           actionButton("set_bootstrap_btn", "Apply Threshold and Proceed")
+                       )
+                     ),
+                     mainPanel(
+                       fluidRow(
+                         column(6, uiOutput("bootstrap_plots_output_module")),
+                         column(6, uiOutput("bootstrap_plots_output_stability"))
+                       )
+                     )
                    )
                  )
         ),
@@ -173,7 +181,7 @@ ui <- fluidPage(
                    actionButton("help_heatmap", "Help", class = "pull-right"),
                    titlePanel("Heatmap"),
                    sidebarLayout(
-                     sidebarPanel(
+                     sidebarPanel(width = 3,
                        numericInput("module_input", "Select Module", 1, min = 1),
                        numericInput("submodule_input", "Select Submodule (0 for FALSE)", 0, min = 0),
                        numericInput("hm_dimensions_input", "Heatmap Dimensions (0 for FALSE)", 0),
@@ -191,7 +199,7 @@ ui <- fluidPage(
                    actionButton("help_lnc_centric", "Help", class = "pull-right"),
                    titlePanel("LNC-centric Analysis"),
                    sidebarLayout(
-                     sidebarPanel(
+                     sidebarPanel(width = 3,
                        selectizeInput("lncSymbol_input", "LNC Symbol", choices = NULL),
                        numericInput("nGenesNet_input", "nGenesNet", 20),
                        numericInput("nTerm_input", "nTerm", 10),
@@ -298,69 +306,6 @@ server <- function(input, output, session) {
     user_id = NULL
   )
   
-  # Reactive observer to regenerate plots when lacenObject is loaded from a saved session
-  observeEvent(input$main_nav, {
-    req(values$lacenObject)
-    if (identical(input$main_nav, "heatmap")) {
-      
-      # Regenerate Cluster Tree Plot
-      cluster_tree_path_threshold <- file.path("users", values$user_id, "clusterTreeThreshold.png")
-      cluster_tree_path_initial <- file.path("users", values$user_id, "clusterTree.png")
-      # Decide which cluster tree image to show
-      final_cluster_path <- if (file.exists(cluster_tree_path_threshold)) {
-        file.path("users_data", values$user_id, "clusterTreeThreshold.png")
-      } else if (file.exists(cluster_tree_path_initial)) {
-        file.path("users_data", values$user_id, "clusterTree.png")
-      } else {
-        NULL
-      }
-      
-      if (!is.null(final_cluster_path)) {
-        output$cluster_tree_plot <- renderUI({
-          tags$a(
-            href = final_cluster_path, target = "_blank",
-            tags$img(src = final_cluster_path, style = "max-width: 100%; height: auto;")
-          )
-        })
-      }
-      
-      # Regenerate Soft Threshold Plot
-      soft_threshold_path_file <- file.path("users", values$user_id, "indicePower.png")
-      if (file.exists(soft_threshold_path_file)) {
-        soft_threshold_path_url <- file.path("users_data", values$user_id, "indicePower.png")
-        output$soft_threshold_plot <- renderUI({
-          tags$a(
-            href = soft_threshold_path_url, target = "_blank",
-            tags$img(src = soft_threshold_path_url, style = "max-width: 100%; height: auto;")
-          )
-        })
-      }
-      
-      # Regenerate Summarize and Enrich Plots
-      enriched_graph_path_file <- file.path("users", values$user_id, "enrichedgraph.png")
-      if (file.exists(enriched_graph_path_file)) {
-        enriched_graph_path_url <- file.path("users_data", values$user_id, "enrichedgraph.png")
-        output$enriched_graph_output <- renderUI({
-          tags$a(
-            href = enriched_graph_path_url, target = "_blank",
-            tags$img(src = enriched_graph_path_url, style = "max-width: 100%; height: auto;")
-          )
-        })
-      }
-      
-      stacked_barplot_path_file <- file.path("users", values$user_id, "stackedplot.png")
-      if (file.exists(stacked_barplot_path_file)) {
-        stacked_barplot_path_url <- file.path("users_data", values$user_id, "stackedplot.png")
-        output$stacked_barplot_output <- renderUI({
-          tags$a(
-            href = stacked_barplot_path_url, target = "_blank",
-            tags$img(src = stacked_barplot_path_url, style = "max-width: 100%; height: auto;")
-          )
-        })
-      }
-    }
-  })
-  
   # Login screen logic
   observeEvent(input$login_btn, {
     session$sendCustomMessage(type = 'show_overlay', message = list())
@@ -382,6 +327,67 @@ server <- function(input, output, session) {
         lacen_object_path <- file.path("users", values$user_id, "lacenObject.rds")
         if (file.exists(lacen_object_path)) {
           values$lacenObject <- readRDS(lacen_object_path)
+          
+          # Regenerate Cluster Tree Plot
+          cluster_tree_path_threshold <- file.path("users", values$user_id, "clusterTreeThreshold.png")
+          cluster_tree_path_initial <- file.path("users", values$user_id, "clusterTree.png")
+          final_cluster_path <- if (file.exists(cluster_tree_path_threshold)) {
+            file.path("users_data", values$user_id, "clusterTreeThreshold.png")
+          } else if (file.exists(cluster_tree_path_initial)) {
+            file.path("users_data", values$user_id, "clusterTree.png")
+          } else {
+            NULL
+          }
+          if (!is.null(final_cluster_path)) {
+            output$cluster_tree_plot <- renderUI({
+              tags$a(href = final_cluster_path, target = "_blank",
+                     tags$img(src = final_cluster_path, style = "max-width: 100%; height: auto;"))
+            })
+          }
+          
+          # Regenerate Soft Threshold Plot
+          soft_threshold_path_file <- file.path("users", values$user_id, "indicePower.png")
+          if (file.exists(soft_threshold_path_file)) {
+            soft_threshold_path_url <- file.path("users_data", values$user_id, "indicePower.png")
+            output$soft_threshold_plot <- renderUI({
+              tags$a(href = soft_threshold_path_url, target = "_blank",
+                     tags$img(src = soft_threshold_path_url, style = "max-width: 100%; height: auto;"))
+            })
+          }
+          
+          # Regenerate Bootstrap Plots
+          mod_groups_plot_path <- file.path("users", values$user_id, "moduleGroups.png")
+          stability_plot_path <- file.path("users", values$user_id, "moduleStability.png")
+          if (file.exists(mod_groups_plot_path) && file.exists(stability_plot_path)) {
+            output$bootstrap_plots_output_module <- renderUI({
+                tags$a(href = file.path("users_data", values$user_id, "moduleGroups.png"), target = "_blank",
+                       tags$img(src = file.path("users_data", values$user_id, "moduleGroups.png"), style = "max-width: 100%; height: auto;"))
+            })
+            output$bootstrap_plots_output_stability <- renderUI({
+                tags$a(href = file.path("users_data", values$user_id, "moduleStability.png"), target = "_blank",
+                       tags$img(src = file.path("users_data", values$user_id, "moduleStability.png"), style = "max-width: 100%; height: auto;"))
+            })
+            shinyjs::show("bootstrap_threshold_div")
+          }
+
+          # Regenerate Summarize and Enrich Plots
+          enriched_graph_path_file <- file.path("users", values$user_id, "enrichedgraph.png")
+          if (file.exists(enriched_graph_path_file)) {
+            enriched_graph_path_url <- file.path("users_data", values$user_id, "enrichedgraph.png")
+            output$enriched_graph_output <- renderUI({
+              tags$a(href = enriched_graph_path_url, target = "_blank",
+                     tags$img(src = enriched_graph_path_url, style = "max-width: 100%; height: auto;"))
+            })
+          }
+          stacked_barplot_path_file <- file.path("users", values$user_id, "stackedplot.png")
+          if (file.exists(stacked_barplot_path_file)) {
+            stacked_barplot_path_url <- file.path("users_data", values$user_id, "stackedplot.png")
+            output$stacked_barplot_output <- renderUI({
+              tags$a(href = stacked_barplot_path_url, target = "_blank",
+                     tags$img(src = stacked_barplot_path_url, style = "max-width: 100%; height: auto;"))
+            })
+          }
+          
           shinyjs::hide("login_screen")
           shinyjs::show("main_app")
           updateNavbarPage(session, "main_nav", selected = "heatmap")
@@ -575,14 +581,13 @@ server <- function(input, output, session) {
         pathStabilityPlot = stability_plot_path
       )
       
-      output$bootstrap_plots_output <- renderUI({
-        list(
-          tags$h4("Bootstrap Results"),
+      output$bootstrap_plots_output_module <- renderUI({
           tags$a(href = file.path("users_data", values$user_id, "moduleGroups.png"), target = "_blank",
-                 tags$img(src = file.path("users_data", values$user_id, "moduleGroups.png"), style = "max-width: 100%; height: auto;")),
+                  tags$img(src = file.path("users_data", values$user_id, "moduleGroups.png"), style = "max-width: 100%; height: auto;"))
+      })
+      output$bootstrap_plots_output_stability <- renderUI({
           tags$a(href = file.path("users_data", values$user_id, "moduleStability.png"), target = "_blank",
-                 tags$img(src = file.path("users_data", values$user_id, "moduleStability.png"), style = "max-width: 100%; height: auto;"))
-        )
+                  tags$img(src = file.path("users_data", values$user_id, "moduleStability.png"), style = "max-width: 100%; height: auto;"))
       })
       shinyjs::show("bootstrap_threshold_div")
       
@@ -593,6 +598,7 @@ server <- function(input, output, session) {
     })
   })
   
+  # summarize_enrich
   observeEvent(input$skip_bootstrap_btn, {
     updateNavbarPage(session, "main_nav", selected = "summarize_enrich")
   })
