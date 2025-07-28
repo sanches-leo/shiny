@@ -4,8 +4,8 @@ FROM rocker/shiny:latest
 RUN apt-get update && apt-get install -y     cron     git     libcurl4-openssl-dev     libssl-dev     libxml2-dev     libfreetype6-dev     libpng-dev     libtiff5-dev     libjpeg-dev     libudunits2-dev     libglpk-dev     libgit2-dev     && rm -rf /var/lib/apt/lists/*
 
 # Install R packages
-RUN R -e "install.packages(c('BiocManager', 'remotes', 'shiny', 'shinyjs', 'dplyr'), repos = 'http://cran.us.r-project.org')"
-RUN R -e "BiocManager::install('sanches-leo/lacen', ask = FALSE)"
+RUN R -e "options(timeout = 1200); install.packages(c('BiocManager', 'remotes', 'shiny', 'shinyjs', 'dplyr', 'markdown'), repos = 'http://cran.us.r-project.org', lib = '/usr/local/lib/R/site-library')"
+RUN R -e "options(timeout = 1200); BiocManager::install('sanches-leo/lacen', ask = FALSE, lib = '/usr/local/lib/R/site-library')"
 
 # Copy application files
 COPY app.R /srv/shiny-server/

@@ -1,5 +1,3 @@
-# Greetings
-
 `lacen` is a dedicated R software package developed to facilitate integrative analysis of gene expression data, focusing specifically on the elucidation of functional roles for long non-coding RNAs (lncRNAs) through weighted gene co-expression network analysis (WGCNA). 
 
 The package offers an intuitive, structured, and robust workflow that seamlessly integrates data handling, transformation, and network construction steps and includes advanced stability checks via bootstrap analyses. `lacen` is designed to be user-friendly and accessible, even for researchers without extensive computational or programming experience, guiding users through a clear and consistent analysis pathway.

@@ -1,5 +1,3 @@
-# Summarize And Enrich
-
 The core function of LACEN automatically constructs the final network, performs functional enrichment of the identified modules using the specified database, and generates a visual representation of the reduced enrichment results as a PNG file. Also, a module composition barplot is also generated, allowing the module composition visualization by protein-coding and lncRNA content alongside trait-module relationships.
 
 The generated tree plot provides a structured summary of the functional enrichment of the network modules, containing the following key information:

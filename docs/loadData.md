@@ -1,5 +1,3 @@
-# Load Data
-
 The `lacen` package requires five input datasets to commence analysis:
 
 1. **Expression Counts Dataframe** (`Upload Raw Expression Data`): A csv table composed of non-normalized RNA-seq counts, structured with genes as rows and samples as columns. Gene identifiers (gene symbols or IDs) should be used as row names, and sample identifiers should appear as column names.

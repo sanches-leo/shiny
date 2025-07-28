@@ -1,9 +1,11 @@
 #!/bin/bash
 
 echo "Cleaning up old user directories..."
-find users/ -mindepth 1 -maxdepth 1 -type d -atime +10 ! -name 'test' -exec rm -rf {} \;
+find users/ -mindepth 1 -maxdepth 1 -type d -amin +2 ! -name 'test' -exec rm -rf {} \;
 
 echo "Starting Docker Compose..."
+export PUID=$(id -u)
+export PGID=$(id -g)
 docker compose up -d
 
 if [ $? -ne 0 ]; then

@@ -1,5 +1,3 @@
-# lncRNA-Centric Analysis
-
 For cases where an lncRNA does not cluster into any module or is filtered out by the standard module selection criteria, LACEN provides an alternative approach to analyze its connectivity. This function identifies the most connected genes associated with a specific lncRNA, generates a subnetwork visualization, and performs functional enrichment analysis.
 
 Using a given lncRNA identifier and a LACEN object containing the coexpression network data, this analysis:
