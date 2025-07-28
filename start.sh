@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "Cleaning up old user directories..."
-find users/ -mindepth 1 -maxdepth 1 -type d -amin +2 ! -name 'test' -exec rm -rf {} \;
+find users/ -mindepth 1 -maxdepth 1 -type d -atime +7 ! -name 'test' -exec rm -rf {} \;
 
 echo "Starting Docker Compose..."
 export PUID=$(id -u)
