@@ -4,7 +4,8 @@ library(lacen)
 library(dplyr)
 
 options(shiny.launch.browser = TRUE)
-options(shiny.maxRequestSize = 100 * 1024^2) 
+options(shiny.maxRequestSize = 100 * 1024^2)
+options(shiny.port = 3838)
 
 # UI Definition
 ui <- fluidPage(
@@ -173,6 +174,7 @@ ui <- fluidPage(
                      sidebarPanel(
                        numericInput("module_input", "Select Module", 1, min = 1),
                        numericInput("submodule_input", "Select Submodule (0 for FALSE)", 0, min = 0),
+                       numericInput("hm_dimensions_input", "Heatmap Dimensions (0 for FALSE)", 0),
                        actionButton("run_heatmap_btn", "Generate Heatmap")
                      ),
                      mainPanel(
@@ -493,8 +495,8 @@ server <- function(input, output, session) {
       file_name <- file.path("users", values$user_id, "clusterTree.png")
       selectOutlierSample(values$lacenObject, height = FALSE, plot = FALSE, filename = file_name)
       output$cluster_tree_plot <- renderUI({
-        tags$a(href = file.path("users_data", values$user_id, "clusterTree.png"), target = "_blank",
-               tags$img(src = file.path("users_data", values$user_id, "clusterTree.png"), style = "max-width: 100%; height: auto;"))
+        tags$a(href = file.path("users_data", values$user_id, basename(file_name)), target = "_blank",
+               tags$img(src = file.path("users_data", values$user_id, basename(file_name)), style = "max-width: 100%; height: auto;"))
       })
     }, error = function(e) {
       showNotification(paste("Error during Filter/Transform:", e$message), type = "error", duration = NULL)
@@ -509,8 +511,7 @@ server <- function(input, output, session) {
     tryCatch({
       req(values$lacenObject)
       height_val <- if (input$height_input == 0) FALSE else input$height_input
-      timestamp <- as.integer(Sys.time())
-      file_name <- file.path("users", values$user_id, paste0("clusterTreeThreshold_", timestamp, ".png"))
+      file_name <- file.path("users", values$user_id, paste0("clusterTree_Threshold_", height_val, ".png"))
       selectOutlierSample(values$lacenObject, height = height_val, plot = FALSE, filename = file_name)
       output$cluster_tree_plot <- renderUI({
         tags$a(href = file.path("users_data", values$user_id, basename(file_name)), target = "_blank",
@@ -685,23 +686,25 @@ server <- function(input, output, session) {
         if (isFALSE(submodule_val)) {
           file_name <- file.path("users",
                                  values$user_id,
-                                 paste0("heatmap_", input$module_input, ".png"))
+                                 paste0("heatmap_", input$module_input,"_d", input$hm_dimensions_input, ".png"))
           out_tsv <- file.path("users",
                                values$user_id,
-                               paste0("heatmap_", input$module_input, ".tsv"))
+                               paste0("heatmap_", input$module_input, "_d", input$hm_dimensions_input, ".tsv"))
         } else {
           file_name <- file.path("users",
                                  values$user_id,
-                                 paste0("heatmap_", input$module_input, "_", submodule_val, ".png"))
+                                 paste0("heatmap_", input$module_input, "_", submodule_val, "_d", input$hm_dimensions_input, ".png"))
           out_tsv <- file.path("users",
                                values$user_id,
-                               paste0("heatmap_", input$module_input, "_", submodule_val, ".tsv"))
+                               paste0("heatmap_", input$module_input, "_", submodule_val, "_d", input$hm_dimensions_input, ".tsv"))
         }
+        hm_dimensions <- if (input$hm_dimensions_input == 0) FALSE else input$hm_dimensions_input
         heatmapTopConnectivity(values$lacenObject,
                                module = input$module_input,
                                submodule = submodule_val,
                                filename = file_name,
-                               outTSV = out_tsv)
+                               outTSV = out_tsv,
+                               hmDimensions = hm_dimensions)
         output$heatmap_plot <- renderUI({
           tags$a(href = file.path("users_data", values$user_id, basename(file_name)), target = "_blank",
                  tags$img(src = file.path("users_data", values$user_id, basename(file_name)), style = "max-width: 100%; height: auto;"))
