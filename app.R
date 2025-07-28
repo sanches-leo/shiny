@@ -27,10 +27,9 @@ ui <- fluidPage(
         navbarPage(
             "LACEN Pipeline",
             id = "main_nav",
-            tabPanel("Greetings",
-                value = "greetings",
+            tabPanel("Wellcome",
+                value = "wellcome",
                 fluidPage(
-                    actionButton("help_greetings", "Help", class = "pull-right"),
                     titlePanel("Welcome to the LACEN Shiny App"),
                     p("This application provides a graphical interface for the LACEN pipeline."),
                     actionButton("start_btn", "Start")
@@ -222,14 +221,6 @@ ui <- fluidPage(
 # Server Logic
 server <- function(input, output, session) {
     # Help button observers
-    observeEvent(input$help_greetings, {
-        showModal(modalDialog(
-            title = "Greetings",
-            includeMarkdown("docs/greetings.md"),
-            easyClose = TRUE,
-            footer = NULL
-        ))
-    })
     observeEvent(input$help_load_data, {
         showModal(modalDialog(
             title = "Load Data",
@@ -402,7 +393,7 @@ server <- function(input, output, session) {
         })
     })
 
-    # 1.0 Greetings
+    # 1.0 Welcomme
     observeEvent(input$start_btn, {
         updateNavbarPage(session, "main_nav", selected = "load_data")
     })
