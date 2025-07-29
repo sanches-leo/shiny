@@ -7,6 +7,11 @@ options(shiny.launch.browser = TRUE)
 options(shiny.maxRequestSize = 100 * 1024^2)
 options(shiny.port = 3838)
 
+maxBlockSize <- 20000
+nThreads <- 4
+
+
+
 # UI Definition
 ui <- fluidPage(
   useShinyjs(),
@@ -536,7 +541,7 @@ server <- function(input, output, session) {
       values$lacenObject <- cutOutlierSample(values$lacenObject, height = height_val)
       updateNavbarPage(session, "main_nav", selected = "soft_threshold")
       file_name <- file.path("users", values$user_id, "indicePower.png")
-      plotSoftThreshold(values$lacenObject, filename = file_name, maxBlockSize = 20000, plot = FALSE)
+      plotSoftThreshold(values$lacenObject, filename = file_name, maxBlockSize = maxBlockSize, plot = FALSE)
       output$soft_threshold_plot <- renderUI({
         tags$a(href = file.path("users_data", values$user_id, "indicePower.png"), target = "_blank",
                tags$img(src = file.path("users_data", values$user_id, "indicePower.png"), style = "max-width: 100%; height: auto;"))
@@ -575,12 +580,13 @@ server <- function(input, output, session) {
       values$lacenObject <- lacenBootstrap(
         lacenObject = values$lacenObject,
         numberOfIterations = 100,
-        maxBlockSize = 50000,
+        maxBlockSize = maxBlockSize,
         csvPath = bootstrap_csv_path,
         pathModGroupsPlot = mod_groups_plot_path,
-        pathStabilityPlot = stability_plot_path
+        pathStabilityPlot = stability_plot_path,
+        nThreads = nThreads
       )
-      
+      saveRDS(values$lacenObject, file.path("users", values$user_id, "lacenObject.rds"))
       output$bootstrap_plots_output_module <- renderUI({
           tags$a(href = file.path("users_data", values$user_id, "moduleGroups.png"), target = "_blank",
                   tags$img(src = file.path("users_data", values$user_id, "moduleGroups.png"), style = "max-width: 100%; height: auto;"))
@@ -648,7 +654,7 @@ server <- function(input, output, session) {
       log_path <- file.path("users", values$user_id, "log.txt")
       tsv_path <- file.path("users", values$user_id, "summary.tsv")
       values$lacenObject <- summarizeAndEnrichModules(values$lacenObject,
-                                                      maxBlockSize = 20000,
+                                                      maxBlockSize = maxBlockSize,
                                                       filename = enriched_path,
                                                       modPath = mod_path,
                                                       log = TRUE,
@@ -666,6 +672,8 @@ server <- function(input, output, session) {
       session$sendCustomMessage(type = 'hide_overlay', message = list())
     })
   })
+  
+  
   
   # 6.0 Heatmap
   observeEvent(input$run_heatmap_btn, {
