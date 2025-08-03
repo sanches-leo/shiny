@@ -7,6 +7,8 @@ This function allows users to explore the **local co-expression environment** of
 - **Functional Enrichment Analysis**: Performs over-representation analysis of the retrieved gene set to identify enriched biological processes or pathways.
 - **Enrichment Visualization**: Displays the top enrichment results in an interpretable format, supporting **guilt-by-association** inference of the lncRNA’s potential biological roles.
 
+Note: The strength of the connections between the selected lncRNA and its neighboring genes is typically weak, which is reflected by thin edges in the subnetwork visualization. This is expected, as many lncRNAs tend to show modest co-expression patterns. However, in some cases, lncRNAs may exhibit strong co-expression with specific genes, resulting in thicker edges that highlight potentially more robust regulatory or functional relationships.
+
 ---
 
 ## User-Configurable Parameters
