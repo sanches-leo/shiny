@@ -11,3 +11,4 @@ The `lacen` package requires five input datasets to commence analysis:
 
 5. **Non-coding RNA Annotation Dataframe** (`Upload ncAnnotation Data`): A specific subset of the annotation data (`annotationData`) containing only long non-coding RNA entries. Non-coding RNA annotation data can also be directly loaded from a GTF file. 
 
+Alternatively, a demo dataset can be loaded by clicking on `Use Demo Data`, which will import a randomly selected pair of tumor and adjacent normal tissue samples from the TCGA BRCA project. These samples have been preprocessed using the STAR alignment pipeline via the TCGAbiolinks package.

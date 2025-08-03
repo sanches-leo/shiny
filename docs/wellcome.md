@@ -5,9 +5,11 @@
 <br>
 <br>
 <div style="text-align: justify; font-size: 24px;">
-`lacen` is a dedicated R software package developed to facilitate integrative analysis of gene expression data, focusing specifically on the elucidation of functional roles for long non-coding RNAs (lncRNAs) through weighted gene co-expression network analysis (WGCNA). 
+LACEN is an R software package specifically designed to support integrative analysis of gene expression data, with a particular emphasis on uncovering the functional roles of long non-coding RNAs (lncRNAs) through Weighted Gene Co-expression Network Analysis (WGCNA).
 
-The package offers an intuitive, structured, and robust workflow that seamlessly integrates data handling, transformation, and network construction steps and includes advanced stability checks via bootstrap analyses. `lacen` is designed to be user-friendly and accessible, even for researchers without extensive computational or programming experience, guiding users through a clear and consistent analysis pathway.
+The package provides a streamlined, intuitive, and robust workflow that covers data preprocessing, transformation, and network construction. It also incorporates advanced module stability assessments using bootstrap-based analyses.
 
-Although initially optimized using human cancer RNA-seq datasets, the package is not limited to oncological studies and can handle data from numerous experimental contexts and organisms. The only strict requirements are that the input RNA-seq expression profiles must represent at least two sample conditions (for instance, two different biological or clinical groups), and input files must conform to the required format. Beyond human datasets, `lacen` supports most widely-researched organisms included in [Bioconductor's OrgDb annotation packages](https://www.bioconductor.org/packages/release/BiocViews.html#___OrgDb).
+Although initially tailored for human cancer RNA-seq datasets, LACEN is broadly applicable to a wide range of organisms and experimental conditions. The main requirements are that input RNA-seq expression profiles must include at least two sample conditions (e.g., distinct biological or clinical groups), and input files must adhere to the expected format.
+
+This Shiny application offers a user-friendly graphical interface for running LACEN without the need for command-line interaction. Users must create an account and provide an institutional password (available from the server administrator). Results generated from the bootstrap and enrichment summary steps are retained on the server for up to 7 days, allowing users to revisit and run the final two steps without re-executing the full network construction, which is computationally intensive.
 </div>

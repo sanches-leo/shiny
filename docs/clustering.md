@@ -1,2 +1,1 @@
-This step will allow the user to indentify if there is outliers in the samples and select a threshold to remove them. It's possible to Te-run the Clustering and visualize if the height is adequate. Samples selected under the height (red bar) will be kept.
-
+This step allows the user to identify potential outliers among the samples and define a threshold for their removal. Users can re-run the clustering to assess whether the selected height is appropriate. Samples that fall below the specified height (indicated by the red bar) will be retained. If the height is set to 0, no samples will be excluded from subsequent analyses.
