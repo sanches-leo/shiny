@@ -744,10 +744,20 @@ server <- function(input, output, session) {
     session$sendCustomMessage(type = 'show_overlay', message = list())
     tryCatch({
       req(values$lacenObject, input$lncSymbol_input)
-      net_path <- file.path("users", values$user_id, paste0(input$lncSymbol_input, "_netPlot.png"))
-      enr_path <- file.path("users", values$user_id, paste0(input$lncSymbol_input, "_enrPlot.png"))
-      connec_path <- file.path("users", values$user_id, paste0(input$lncSymbol_input, "_connectivities.csv"))
-      enr_csv_path <- file.path("users", values$user_id, paste0(input$lncSymbol_input, "_enrichment.csv"))
+      
+      base_filename <- paste(
+        input$lncSymbol_input,
+        input$nGenes_input,
+        input$nGenesNet_input,
+        input$nTerm_input,
+        input$sources_input,
+        sep = "_"
+      )
+      
+      net_path <- file.path("users", values$user_id, paste0(base_filename, "_netPlot.png"))
+      enr_path <- file.path("users", values$user_id, paste0(base_filename, "_enrPlot.png"))
+      connec_path <- file.path("users", values$user_id, paste0(base_filename, "_connectivities.csv"))
+      enr_csv_path <- file.path("users", values$user_id, paste0(base_filename, "_enrichment.csv"))
       
       lncRNAEnrich(
         lncName = input$lncSymbol_input, lacenObject = values$lacenObject,
@@ -756,10 +766,20 @@ server <- function(input, output, session) {
         connecPath = connec_path, enrCsvPath = enr_csv_path
       )
       
-      image_filename_net <- paste0(input$lncSymbol_input, "_netPlot.png")
-      image_filename_enr <- paste0(input$lncSymbol_input, "_enrPlot.png")
-      output$lnc_net_plot_output <- renderUI({ tags$a(href = file.path("users_data", values$user_id, image_filename_net), target = "_blank", tags$img(src = file.path("users_data", values$user_id, image_filename_net), style = "max-width: 100%; height: auto;")) })
-      output$lnc_enr_plot_output <- renderUI({ tags$a(href = file.path("users_data", values$user_id, image_filename_enr), target = "_blank", tags$img(src = file.path("users_data", values$user_id, image_filename_enr), style = "max-width: 100%; height: auto;")) })
+      image_filename_net <- basename(net_path)
+      image_filename_enr <- basename(enr_path)
+      
+      output$lnc_net_plot_output <- renderUI({
+        tags$a(href = file.path("users_data", values$user_id, image_filename_net),
+               target = "_blank",
+               tags$img(src = file.path("users_data", values$user_id, image_filename_net), style = "max-width: 100%; height: auto;"))
+      })
+      
+      output$lnc_enr_plot_output <- renderUI({
+        tags$a(href = file.path("users_data", values$user_id, image_filename_enr),
+               target = "_blank",
+               tags$img(src = file.path("users_data", values$user_id, image_filename_enr), style = "max-width: 100%; height: auto;"))
+      })
     }, error = function(e) {
       showNotification(paste("LNC-centric analysis failed: Please try to increase the nGenes or try another lncRNA"), type = "error", duration = NULL)
     }, finally = {
