@@ -206,9 +206,9 @@ ui <- fluidPage(
                    sidebarLayout(
                      sidebarPanel(width = 3,
                        selectizeInput("lncSymbol_input", "LNC Symbol", choices = NULL),
-                       numericInput("nGenesNet_input", "Gene Count for Enrichment", 20),
+                       numericInput("nGenes_input", "Gene Count for Enrichment", 100),
+                       numericInput("nGenesNet_input", "Gene Count for Visualization", 20),
                        numericInput("nTerm_input", "Pathway Count for Plotting", 10),
-                       numericInput("nGenes_input", "Gene Count for Visualization", 100),
                        selectInput("sources_input", "Sources",
                                    choices = c("GO", "GO:BP", "GO:MF", "GO:CC", "KEGG", "REAC")
                        ),

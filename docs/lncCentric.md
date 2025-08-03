@@ -16,11 +16,12 @@ This function allows users to explore the **local co-expression environment** of
   - A smaller value targets the most tightly co-expressed genes, enhancing specificity.  
   - A larger value broadens the analysis scope, potentially capturing more functional diversity.
 
-- **Pathway Count for Plotting**  
-  Defines how many of the most significantly enriched biological terms or pathways will be annotated in the subnetwork plot. This helps balance interpretability and information density.
-
 - **Gene Count for Visualization**  
   Sets the number of genes to display in the subnetwork graph. Reducing the number can simplify visualization, especially in densely connected networks.
+
+
+- **Pathway Count for Plotting**  
+  Defines how many of the most significantly enriched biological terms or pathways will be annotated in the subnetwork plot. This helps balance interpretability and information density.
 
 - **Enrichment Sources**  
   Choose from the following biological databases for functional annotation:  
