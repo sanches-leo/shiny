@@ -4,6 +4,12 @@ echo "Cleaning up old user directories..."
 find users/ -mindepth 1 -maxdepth 1 -type d -atime +7 ! -name 'test' -exec rm -rf {} \;
 
 echo "Starting Docker Compose..."
+if [ ! -d "users" ] || [ ! -w "users" ]; then
+  echo "The 'users' directory does not exist or you don't have write permissions."
+  echo "Please run the following command to create the directory and set the correct permissions:"
+  echo "mkdir -p users && sudo chown -R $(id -u):$(id -g) users && sudo chmod -R 777 users"
+  exit 1
+fi
 export PUID=$(id -u)
 export PGID=$(id -g)
 docker compose up -d
