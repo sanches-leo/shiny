@@ -4,11 +4,11 @@ services:
     ports:
       - "3838:3838"
     volumes:
-      - ./app.R:/srv/shiny-server/app.R
-      - ./www:/srv/shiny-server/www
-      - ./.pass:/srv/shiny-server/.pass
-      - ./users:/srv/shiny-server/users
-      - ./docs:/srv/shiny-server/docs
-      - ./log:/srv/shiny-server/log
+      - ./app.R:/srv/shiny-server/lacen/app.R
+      - ./www:/srv/shiny-server/lacen/www
+      - ./.pass:/srv/shiny-server/lacen/.pass
+      - ./users:/srv/shiny-server/lacen/users
+      - ./docs:/srv/shiny-server/lacen/docs
+      - ./log:/srv/shiny-server/lacen/log
     restart: always
     user: "${PUID}:${PGID}"

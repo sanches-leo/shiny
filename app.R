@@ -1,3 +1,4 @@
+.libPaths("/home/leo/R/x86_64-pc-linux-gnu-library/4.5")
 library(shiny)
 library(shinyjs)
 library(lacen)
