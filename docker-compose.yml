@@ -7,8 +7,8 @@ services:
       - ./app.R:/srv/shiny-server/lacen/app.R
       - ./www:/srv/shiny-server/lacen/www
       - ./.pass:/srv/shiny-server/lacen/.pass
-      - ./users:/srv/shiny-server/lacen/users
+      
       - ./docs:/srv/shiny-server/lacen/docs
       - ./log:/srv/shiny-server/lacen/log
     restart: always
-    user: "${PUID}:${PGID}"
+    

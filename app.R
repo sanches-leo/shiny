@@ -316,11 +316,10 @@ server <- function(input, output, session) {
         return(list(status = "fail", message = "Incorrect password."))
       }
       
-      user_dir <- file.path("users", user_id)
+      user_dir <- file.path("www", "users", user_id)
       if (!dir.exists(user_dir)) dir.create(user_dir, recursive = TRUE)
-      addResourcePath("users_data", "users")
       
-      lacen_object_path <- file.path("users", user_id, "lacenObject.rds")
+      lacen_object_path <- file.path("www", "users", user_id, "lacenObject.rds")
       if (file.exists(lacen_object_path)) {
         return(list(status = "load_session", user_id = user_id))
       } else {
@@ -332,41 +331,41 @@ server <- function(input, output, session) {
       } else {
         values$user_id <- result$user_id
         if (result$status == "load_session") {
-          lacen_object_path <- file.path("users", values$user_id, "lacenObject.rds")
+          lacen_object_path <- file.path("www", "users", values$user_id, "lacenObject.rds")
           values$lacenObject <- readRDS(lacen_object_path)
 
           # Regenerate plots (this part is fast UI rendering, no future needed here)
-          cluster_tree_path_threshold <- file.path("users", values$user_id, "clusterTreeThreshold.png")
-          cluster_tree_path_initial <- file.path("users", values$user_id, "clusterTree.png")
+          cluster_tree_path_threshold <- file.path("www", "users", values$user_id, "clusterTreeThreshold.png")
+          cluster_tree_path_initial <- file.path("www", "users", values$user_id, "clusterTree.png")
           final_cluster_path <- if (file.exists(cluster_tree_path_threshold)) {
-            file.path("users_data", values$user_id, "clusterTreeThreshold.png")
+            file.path("users", values$user_id, "clusterTreeThreshold.png")
           } else if (file.exists(cluster_tree_path_initial)) {
-            file.path("users_data", values$user_id, "clusterTree.png")
+            file.path("users", values$user_id, "clusterTree.png")
           }
           if (!is.null(final_cluster_path)) {
             output$cluster_tree_plot <- renderUI({ tags$a(href = final_cluster_path, target = "_blank", tags$img(src = final_cluster_path, style = "max-width: 100%; height: auto;")) })
           }
 
-          soft_threshold_path_file <- file.path("users", values$user_id, "indicePower.png")
+          soft_threshold_path_file <- file.path("www", "users", values$user_id, "indicePower.png")
           if (file.exists(soft_threshold_path_file)) {
-            output$soft_threshold_plot <- renderUI({ tags$a(href = file.path("users_data", values$user_id, "indicePower.png"), target = "_blank", tags$img(src = file.path("users_data", values$user_id, "indicePower.png"), style = "max-width: 100%; height: auto;")) })
+            output$soft_threshold_plot <- renderUI({ tags$a(href = file.path("users", values$user_id, "indicePower.png"), target = "_blank", tags$img(src = file.path("users", values$user_id, "indicePower.png"), style = "max-width: 100%; height: auto;")) })
           }
 
-          mod_groups_plot_path <- file.path("users", values$user_id, "moduleGroups.png")
-          stability_plot_path <- file.path("users", values$user_id, "moduleStability.png")
+          mod_groups_plot_path <- file.path("www", "users", values$user_id, "moduleGroups.png")
+          stability_plot_path <- file.path("www", "users", values$user_id, "moduleStability.png")
           if (file.exists(mod_groups_plot_path) && file.exists(stability_plot_path)) {
-            output$bootstrap_plots_output_module <- renderUI({ tags$a(href = file.path("users_data", values$user_id, "moduleGroups.png"), target = "_blank", tags$img(src = file.path("users_data", values$user_id, "moduleGroups.png"), style = "max-width: 100%; height: auto;")) })
-            output$bootstrap_plots_output_stability <- renderUI({ tags$a(href = file.path("users_data", values$user_id, "moduleStability.png"), target = "_blank", tags$img(src = file.path("users_data", values$user_id, "moduleStability.png"), style = "max-width: 100%; height: auto;")) })
+            output$bootstrap_plots_output_module <- renderUI({ tags$a(href = file.path("users", values$user_id, "moduleGroups.png"), target = "_blank", tags$img(src = file.path("users", values$user_id, "moduleGroups.png"), style = "max-width: 100%; height: auto;")) })
+            output$bootstrap_plots_output_stability <- renderUI({ tags$a(href = file.path("users", values$user_id, "moduleStability.png"), target = "_blank", tags$img(src = file.path("users", values$user_id, "moduleStability.png"), style = "max-width: 100%; height: auto;")) })
             shinyjs::show("bootstrap_threshold_div")
           }
 
-          enriched_graph_path_file <- file.path("users", values$user_id, "enrichedgraph.png")
+          enriched_graph_path_file <- file.path("www", "users", values$user_id, "enrichedgraph.png")
           if (file.exists(enriched_graph_path_file)) {
-            output$enriched_graph_output <- renderUI({ tags$a(href = file.path("users_data", values$user_id, "enrichedgraph.png"), target = "_blank", tags$img(src = file.path("users_data", values$user_id, "enrichedgraph.png"), style = "max-width: 100%; height: auto;")) })
+            output$enriched_graph_output <- renderUI({ tags$a(href = file.path("users", values$user_id, "enrichedgraph.png"), target = "_blank", tags$img(src = file.path("users", values$user_id, "enrichedgraph.png"), style = "max-width: 100%; height: auto;")) })
           }
-          stacked_barplot_path_file <- file.path("users", values$user_id, "stackedplot.png")
+          stacked_barplot_path_file <- file.path("www", "users", values$user_id, "stackedplot.png")
           if (file.exists(stacked_barplot_path_file)) {
-            output$stacked_barplot_output <- renderUI({ tags$a(href = file.path("users_data", values$user_id, "stackedplot.png"), target = "_blank", tags$img(src = file.path("users_data", values$user_id, "stackedplot.png"), style = "max-width: 100%; height: auto;")) })
+            output$stacked_barplot_output <- renderUI({ tags$a(href = file.path("users", values$user_id, "stackedplot.png"), target = "_blank", tags$img(src = file.path("users", values$user_id, "stackedplot.png"), style = "max-width: 100%; height: auto;")) })
           }
           
           shinyjs::hide("login_screen")
@@ -501,7 +500,7 @@ server <- function(input, output, session) {
         new_lacen_object <- filterTransform(current_lacen_object, topVarGenes = topVarGenes, filterMethod = "var")
       }
       
-      file_name <- file.path("users", user_id, "clusterTree.png")
+      file_name <- file.path("www", "users", user_id, "clusterTree.png")
       selectOutlierSample(new_lacen_object, height = FALSE, plot = FALSE, filename = file_name)
       
       list(new_object = new_lacen_object, plot_file = file_name)
@@ -510,8 +509,8 @@ server <- function(input, output, session) {
       output$filter_transform_output <- renderPrint({ "Filter and transform complete. Proceeding to clustering." })
       updateNavbarPage(session, "main_nav", selected = "clustering")
       output$cluster_tree_plot <- renderUI({
-        tags$a(href = file.path("users_data", values$user_id, basename(result$plot_file)), target = "_blank",
-               tags$img(src = file.path("users_data", values$user_id, basename(result$plot_file)), style = "max-width: 100%; height: auto;"))
+        tags$a(href = file.path("users", values$user_id, basename(result$plot_file)), target = "_blank",
+               tags$img(src = file.path("users", values$user_id, basename(result$plot_file)), style = "max-width: 100%; height: auto;"))
       })
     }) %...!% (function(error) {
       showNotification(paste("Error during Filter/Transform:", error$message), type = "error", duration = NULL)
@@ -532,13 +531,13 @@ server <- function(input, output, session) {
     future({
       req(current_lacen_object, user_id)
       height_val <- if (height_input == 0) FALSE else height_input
-      file_name <- file.path("users", user_id, paste0("clusterTree_Threshold_", height_val, ".png"))
+      file_name <- file.path("www", "users", user_id, paste0("clusterTree_Threshold_", height_val, ".png"))
       selectOutlierSample(current_lacen_object, height = height_val, plot = FALSE, filename = file_name)
       return(file_name)
     }) %...>% (function(plot_file) {
       output$cluster_tree_plot <- renderUI({
-        tags$a(href = file.path("users_data", values$user_id, basename(plot_file)), target = "_blank",
-               tags$img(src = file.path("users_data", values$user_id, basename(plot_file)), style = "max-width: 100%; height: auto;"))
+        tags$a(href = file.path("users", values$user_id, basename(plot_file)), target = "_blank",
+               tags$img(src = file.path("users", values$user_id, basename(plot_file)), style = "max-width: 100%; height: auto;"))
       })
     }) %...!% (function(error) {
       showNotification(paste("Error during clustering:", error$message), type = "error", duration = NULL)
@@ -561,7 +560,7 @@ server <- function(input, output, session) {
       height_val <- if (height_input == 0) FALSE else height_input
       new_lacen_object <- cutOutlierSample(current_lacen_object, height = height_val)
       
-      file_name <- file.path("users", user_id, "indicePower.png")
+      file_name <- file.path("www", "users", user_id, "indicePower.png")
       plotSoftThreshold(new_lacen_object, filename = file_name, maxBlockSize = maxBlockSize, plot = FALSE)
       
       list(new_object = new_lacen_object, plot_file = file_name)
@@ -569,8 +568,8 @@ server <- function(input, output, session) {
       values$lacenObject <- result$new_object
       updateNavbarPage(session, "main_nav", selected = "soft_threshold")
       output$soft_threshold_plot <- renderUI({
-        tags$a(href = file.path("users_data", values$user_id, basename(result$plot_file)), target = "_blank",
-               tags$img(src = file.path("users_data", values$user_id, basename(result$plot_file)), style = "max-width: 100%; height: auto;"))
+        tags$a(href = file.path("users", values$user_id, basename(result$plot_file)), target = "_blank",
+               tags$img(src = file.path("users", values$user_id, basename(result$plot_file)), style = "max-width: 100%; height: auto;"))
       })
     }) %...!% (function(error) {
       showNotification(paste("Error accepting height:", error$message), type = "error", duration = NULL)
@@ -611,9 +610,9 @@ server <- function(input, output, session) {
     
     future({
       req(current_lacen_object, user_id)
-      bootstrap_csv_path <- file.path("users", user_id, "bootstrap.csv")
-      mod_groups_plot_path <- file.path("users", user_id, "moduleGroups.png")
-      stability_plot_path <- file.path("users", user_id, "moduleStability.png")
+      bootstrap_csv_path <- file.path("www", "users", user_id, "bootstrap.csv")
+      mod_groups_plot_path <- file.path("www", "users", user_id, "moduleGroups.png")
+      stability_plot_path <- file.path("www", "users", user_id, "moduleStability.png")
       
       new_lacen_object <- lacenBootstrap(
         lacenObject = current_lacen_object, numberOfIterations = 100,
@@ -621,7 +620,7 @@ server <- function(input, output, session) {
         pathModGroupsPlot = mod_groups_plot_path,
         pathStabilityPlot = stability_plot_path, nThreads = nThreads
       )
-      saveRDS(new_lacen_object, file.path("users", user_id, "lacenObject.rds"))
+      saveRDS(new_lacen_object, file.path("www", "users", user_id, "lacenObject.rds"))
       
       list(
         new_object = new_lacen_object,
@@ -631,12 +630,12 @@ server <- function(input, output, session) {
     }) %...>% (function(result) {
       values$lacenObject <- result$new_object
       output$bootstrap_plots_output_module <- renderUI({
-        tags$a(href = file.path("users_data", values$user_id, basename(result$mod_groups_plot)), target = "_blank",
-               tags$img(src = file.path("users_data", values$user_id, basename(result$mod_groups_plot)), style = "max-width: 100%; height: auto;"))
+        tags$a(href = file.path("users", values$user_id, basename(result$mod_groups_plot)), target = "_blank",
+               tags$img(src = file.path("users", values$user_id, basename(result$mod_groups_plot)), style = "max-width: 100%; height: auto;"))
       })
       output$bootstrap_plots_output_stability <- renderUI({
-        tags$a(href = file.path("users_data", values$user_id, basename(result$stability_plot)), target = "_blank",
-               tags$img(src = file.path("users_data", values$user_id, basename(result$stability_plot)), style = "max-width: 100%; height: auto;"))
+        tags$a(href = file.path("users", values$user_id, basename(result$stability_plot)), target = "_blank",
+               tags$img(src = file.path("users", values$user_id, basename(result$stability_plot)), style = "max-width: 100%; height: auto;"))
       })
       shinyjs::show("bootstrap_threshold_div")
     }) %...!% (function(error) {
@@ -693,17 +692,17 @@ server <- function(input, output, session) {
       
       if (!require(orgdb, quietly = TRUE, character.only = TRUE)) BiocManager::install(orgdb)
       
-      enriched_path <- file.path("users", user_id, "enrichedgraph.png")
-      stacked_path <- file.path("users", user_id, "stackedplot.png")
+      enriched_path <- file.path("www", "users", user_id, "enrichedgraph.png")
+      stacked_path <- file.path("www", "users", user_id, "stackedplot.png")
       
       new_lacen_object <- summarizeAndEnrichModules(
         current_lacen_object, maxBlockSize = maxBlockSize, filename = enriched_path,
-        modPath = file.path("users", user_id), log = TRUE,
-        log_path = file.path("users", user_id, "log.txt"), organism = organism,
-        orgdb = orgdb, pathTSV = file.path("users", user_id, "summary.tsv")
+        modPath = file.path("www", "users", user_id), log = TRUE,
+        log_path = file.path("www", "users", user_id, "log.txt"), organism = organism,
+        orgdb = orgdb, pathTSV = file.path("www", "users", user_id, "summary.tsv")
       )
       stackedBarplot(new_lacen_object, filename = stacked_path, plot = FALSE)
-      saveRDS(new_lacen_object, file.path("users", user_id, "lacenObject.rds"))
+      saveRDS(new_lacen_object, file.path("www", "users", user_id, "lacenObject.rds"))
       
       list(
         new_object = new_lacen_object,
@@ -712,8 +711,8 @@ server <- function(input, output, session) {
       )
     }) %...>% (function(result) {
       values$lacenObject <- result$new_object
-      output$enriched_graph_output <- renderUI({ tags$a(href = file.path("users_data", values$user_id, basename(result$enriched_plot)), target = "_blank", tags$img(src = file.path("users_data", values$user_id, basename(result$enriched_plot)), style = "max-width: 100%; height: auto;")) })
-      output$stacked_barplot_output <- renderUI({ tags$a(href = file.path("users_data", values$user_id, basename(result$stacked_plot)), target = "_blank", tags$img(src = file.path("users_data", values$user_id, basename(result$stacked_plot)), style = "max-width: 100%; height: auto;")) })
+      output$enriched_graph_output <- renderUI({ tags$a(href = file.path("users", values$user_id, basename(result$enriched_plot)), target = "_blank", tags$img(src = file.path("users", values$user_id, basename(result$enriched_plot)), style = "max-width: 100%; height: auto;")) })
+      output$stacked_barplot_output <- renderUI({ tags$a(href = file.path("users", values$user_id, basename(result$stacked_plot)), target = "_blank", tags$img(src = file.path("users", values$user_id, basename(result$stacked_plot)), style = "max-width: 100%; height: auto;")) })
     }) %...!% (function(error) {
       showNotification(paste("Error during Summarize/Enrich:", error$message), type = "error", duration = NULL)
     }) %>%
@@ -754,8 +753,8 @@ server <- function(input, output, session) {
         } else {
           paste0("heatmap_", module_input, "_", submodule_val, "_d", hm_dimensions_input)
         }
-        file_name <- file.path("users", user_id, paste0(prefix, ".png"))
-        out_tsv <- file.path("users", user_id, paste0(prefix, ".tsv"))
+        file_name <- file.path("www", "users", user_id, paste0(prefix, ".png"))
+        out_tsv <- file.path("www", "users", user_id, paste0(prefix, ".tsv"))
         hm_dimensions <- if (hm_dimensions_input == 0) FALSE else hm_dimensions_input
         
         heatmapTopConnectivity(
@@ -769,8 +768,8 @@ server <- function(input, output, session) {
     }) %...>% (function(result) {
       if (result$status == "success") {
         output$heatmap_plot <- renderUI({
-          tags$a(href = file.path("users_data", values$user_id, basename(result$plot_file)), target = "_blank",
-                 tags$img(src = file.path("users_data", values$user_id, basename(result$plot_file)), style = "max-width: 100%; height: auto;"))
+          tags$a(href = file.path("users", values$user_id, basename(result$plot_file)), target = "_blank",
+                 tags$img(src = file.path("users", values$user_id, basename(result$plot_file)), style = "max-width: 100%; height: auto;"))
         })
       } else {
         showNotification(result$message, type = "error")
@@ -805,25 +804,25 @@ server <- function(input, output, session) {
     future({
       req(current_lacen_object, user_id, lncSymbol_input)
       base_filename <- paste(lncSymbol_input, nGenes_input, nGenesNet_input, nTerm_input, sources_input, sep = "_")
-      net_path <- file.path("users", user_id, paste0(base_filename, "_netPlot.png"))
-      enr_path <- file.path("users", user_id, paste0(base_filename, "_enrPlot.png"))
+      net_path <- file.path("www", "users", user_id, paste0(base_filename, "_netPlot.png"))
+      enr_path <- file.path("www", "users", user_id, paste0(base_filename, "_enrPlot.png"))
       
       lncRNAEnrich(
         lncName = lncSymbol_input, lacenObject = current_lacen_object,
         nGenesNet = nGenesNet_input, nTerm = nTerm_input, nGenes = nGenes_input,
         sources = sources_input, netPath = net_path, enrPath = enr_path,
-        connecPath = file.path("users", user_id, paste0(base_filename, "_connectivities.csv")),
-        enrCsvPath = file.path("users", user_id, paste0(base_filename, "_enrichment.csv"))
+        connecPath = file.path("www", "users", user_id, paste0(base_filename, "_connectivities.csv")),
+        enrCsvPath = file.path("www", "users", user_id, paste0(base_filename, "_enrichment.csv"))
       )
       list(net_plot = net_path, enr_plot = enr_path)
     }) %...>% (function(result) {
       output$lnc_net_plot_output <- renderUI({
-        tags$a(href = file.path("users_data", values$user_id, basename(result$net_plot)), target = "_blank",
-               tags$img(src = file.path("users_data", values$user_id, basename(result$net_plot)), style = "max-width: 100%; height: auto;"))
+        tags$a(href = file.path("users", values$user_id, basename(result$net_plot)), target = "_blank",
+               tags$img(src = file.path("users", values$user_id, basename(result$net_plot)), style = "max-width: 100%; height: auto;"))
       })
       output$lnc_enr_plot_output <- renderUI({
-        tags$a(href = file.path("users_data", values$user_id, basename(result$enr_plot)), target = "_blank",
-               tags$img(src = file.path("users_data", values$user_id, basename(result$enr_plot)), style = "max-width: 100%; height: auto;"))
+        tags$a(href = file.path("users", values$user_id, basename(result$enr_plot)), target = "_blank",
+               tags$img(src = file.path("users", values$user_id, basename(result$enr_plot)), style = "max-width: 100%; height: auto;"))
       })
     }) %...!% (function(error) {
       showNotification("LNC-centric analysis failed: Please try to increase the nGenes or try another lncRNA", type = "error", duration = NULL)
@@ -841,7 +840,7 @@ server <- function(input, output, session) {
       final_output_folder <- file.path(temp_zip_dir, "lacen_output")
       dir.create(final_output_folder, recursive = TRUE)
       
-      all_user_files <- list.files(file.path("users", values$user_id), full.names = TRUE)
+      all_user_files <- list.files(file.path("www", "users", values$user_id), full.names = TRUE)
       all_user_files <- all_user_files[!grepl("*.rds", all_user_files)]
       
       file.copy(all_user_files, file.path(final_output_folder, basename(all_user_files)))

@@ -20,9 +20,9 @@ COPY .pass /srv/shiny-server/lacen/
 COPY cleanup.sh /srv/shiny-server/lacen/
 
 # Create and set permissions for the users directory
-RUN mkdir -p /srv/shiny-server/lacen/users && \
-    chown -R shiny:shiny /srv/shiny-server/lacen/users && \
-    chmod -R 777 /srv/shiny-server/lacen/users
+RUN mkdir -p /srv/shiny-server/lacen/www/users && \
+    chown -R shiny:shiny /srv/shiny-server/lacen/www/users && \
+    chmod -R 777 /srv/shiny-server/lacen/www/users
 
 # Set up the cron job
 COPY crontab /etc/cron.d/cleanup-cron
