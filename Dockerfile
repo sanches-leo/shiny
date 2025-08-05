@@ -3,10 +3,8 @@ FROM rocker/shiny:latest
 # Install system dependencies
 RUN apt-get update && apt-get install -y     cron     git     libcurl4-openssl-dev     libssl-dev     libxml2-dev     libfreetype6-dev     libpng-dev     libtiff5-dev     libjpeg-dev     libudunits2-dev     libglpk-dev     libgit2-dev     && rm -rf /var/lib/apt/lists/*
 
-RUN sudo su - -c "R -e \"install.packages('shiny', repos='https://cran.rstudio.com/')\""
-
 # Install R packages
-RUN sudo su - -c "R -e \"options(timeout = 1200); install.packages(c('BiocManager', 'remotes', 'shinyjs', 'dplyr', 'markdown', 'shiny'), repos = 'http://cran.us.r-project.org', lib = '/usr/local/lib/R/site-library')\""
+RUN sudo su - -c "R -e \"options(timeout = 1200); install.packages(c('BiocManager', 'remotes', 'shiny', 'shinyjs', 'dplyr', 'markdown', 'future', 'promises'), repos = 'http://cran.us.r-project.org', lib = '/usr/local/lib/R/site-library')\""
 RUN sudo su - -c "R -e \"options(timeout = 1200); BiocManager::install('sanches-leo/lacen', ask = FALSE, lib = '/usr/local/lib/R/site-library')\""
 
 # Copy your custom shiny-server configuration file to the correct location
