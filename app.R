@@ -8,7 +8,7 @@ library(promises)
 plan(multisession)
 
 options(shiny.launch.browser = TRUE)
-options(shiny.maxRequestSize = 100 * 1024^2)
+options(shiny.maxRequestSize = 300 * 1024^2)
 options(shiny.port = 3838)
 
 maxBlockSize <- 20000
